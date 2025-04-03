@@ -1,0 +1,4 @@
+14   Prace 1NP Rack A skladove priestory LAN
+15   montaz krabice do sadrokartonu 6 ks 6.000 36.00 20% 43.20
+16   montaz zlabu FLEX 14 m 1.000 14.00 20% 16.80
+17   montaz kablu FTP 1450 m 0.500 725.00 20% 870.00
