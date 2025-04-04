@@ -1,6 +1,8 @@
 # How to start
 Daj `docker-compose up --build` a letis
 #
+svelte frontend je na http://localhost:5173/
+#
 phpmyadmin je na http://localhost:8081/ 
 udaje od db najdes v docker-compose.yml 
 #

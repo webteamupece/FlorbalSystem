@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  php:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8080:80"
     volumes:
-      - ./src:/var/www/html
+      - ./backend:/var/www/html
     depends_on:
       - db
 
@@ -33,6 +33,13 @@ services:
       MYSQL_ROOT_PASSWORD: root
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    command: npm run dev -- --host
 
 volumes:
   db_data:
