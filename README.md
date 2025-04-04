@@ -1,7 +1,7 @@
-# How to start
+# toto je moj pokus o cisty html/js s endpointamy na spravu databazy
 Daj `docker-compose up --build` a letis
 #
-svelte frontend je na http://localhost:5173/
+backend je tu http://localhost:8080/index.php 
 #
 phpmyadmin je na http://localhost:8081/ 
 udaje od db najdes v docker-compose.yml 
