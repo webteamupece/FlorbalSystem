@@ -1,11 +1,10 @@
-# How to start
+# toto je moj pokus o cisty html/js s endpointamy na spravu databazy
 Daj `docker-compose up --build` a letis
 #
-svelte frontend je na http://localhost:5173/
+backend je tu http://localhost:8080/index.php 
 #
 phpmyadmin je na http://localhost:8081/ 
 udaje od db najdes v docker-compose.yml 
 #
 V phpmyadmin si rozklikni databazu a chod do sql tabu a tam skopiruj sql kod z .sql file ktory je tu v roote repa
-#
-backend je tu http://localhost:8080/ nic nehodi ale endpoint v index.php ide 
+
