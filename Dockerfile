@@ -1,9 +1,18 @@
-FROM php:latest
+FROM php:8.2-apache
 
-WORKDIR /var/www/html
+# Install MySQL extensions
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-COPY src/index.php .
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Copy app files
+COPY ./src/ /var/www/html/
+
+# Set working directory
+WORKDIR /var/www/html/
+
+# Optional: set permissions
+RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
-
-CMD [ "php", "-S", "0.0.0.0:80", "index.php" ]
