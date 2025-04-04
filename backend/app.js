@@ -41,6 +41,7 @@ async function createOrganization() {
         city_id: document.getElementById('orgCitySelect').value
     })
     });
+
     refreshAllDropdowns();
 }
 

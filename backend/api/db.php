@@ -1,18 +1,26 @@
 <?php
 
-function db() {
-    $host = 'db';
-    $db   = 'myapp';
-    $user = 'user';
-    $pass = 'password';
-    $charset = 'utf8mb4';
 
-    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+function ConnectToDB()
+{
+    $hostname = "db";
+    $database = "myapp";
+    $username = "user";
+    $password = "password";
+
     try {
-        return new PDO($dsn, $user, $pass);
+        $conn = new PDO("mysql:host=$hostname;dbname=$database", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        return $conn;
     } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['error' => 'Database connection failed']);
+        echo json_encode(["error" => "DB connection failed: " . $e->getMessage()]);
         exit;
     }
 }
+
