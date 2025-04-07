@@ -31,7 +31,7 @@ class Goal {
           return $this->json($row);
       } else {
           http_response_code(404);
-          return $this->json(["error" => "Goal not found"]);
+          return $this->json(["error" => "Player did not score in that duel"]);
       }
   }
 
@@ -53,6 +53,24 @@ class Goal {
       }
   }
 
+  public function updateGoal($player_id, $duel_id, $goal_count, $own_goal_count) {
+      $stmt = $this->conn->prepare("
+          UPDATE goal SET goal_count = :g, own_goal_count = :o
+          WHERE player_id = :pid AND duel_id = :did
+      ");
+      $stmt->bindParam(':pid', $player_id, PDO::PARAM_INT);
+      $stmt->bindParam(':did', $duel_id, PDO::PARAM_INT);
+      $stmt->bindParam(':g', $goal_count, PDO::PARAM_INT);
+      $stmt->bindParam(':o', $own_goal_count, PDO::PARAM_INT);
+
+      if ($stmt->execute() && $stmt->rowCount() > 0) {
+          return $this->json(["message" => "Goal updated"]);
+      } else {
+          http_response_code(404);
+          return $this->json(["error" => "Player did not score in that duel"]);
+      }
+  }
+
   public function deleteGoal($player_id, $duel_id) {
       $stmt = $this->conn->prepare("DELETE FROM goal WHERE player_id = :pid AND duel_id = :did");
       $stmt->bindParam(':pid', $player_id, PDO::PARAM_INT);
@@ -62,7 +80,7 @@ class Goal {
           return $this->json(["message" => "Goal entry deleted"]);
       } else {
           http_response_code(404);
-          return $this->json(["error" => "Goal not found"]);
+          return $this->json(["error" => "Player did not score in that duel"]);
       }
   }
 }

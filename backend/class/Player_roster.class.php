@@ -1,24 +1,24 @@
 <?php
 
  require_once __DIR__ . '/../api/db.php';
-
+    define ('MAX_PLAYERS', 12); // Define the maximum number of players allowed in a roster
  class PlayerRoster{
-  private $conn;
+    private $conn;
 
-  public function __construct() {
-      $this->conn = ConnectToDB();
-  }
+    public function __construct() {
+        $this->conn = ConnectToDB();
+    }
 
-  private function json($data) {
-      return json_encode($data, JSON_UNESCAPED_UNICODE);
-  }
+    private function json($data) {
+        return json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
 
-  public function getAllPlayerRosters() {
-      $stmt = $this->conn->query("SELECT * FROM player_roster");
-      return $this->json($stmt->fetchAll(PDO::FETCH_ASSOC));
-  }
+    public function getAllPlayerRosters() {
+        $stmt = $this->conn->query("SELECT * FROM player_roster");
+        return $this->json($stmt->fetchAll(PDO::FETCH_ASSOC));
+    }
 
-  public function createPlayerRoster($player_id, $roster_id) {
+    public function createPlayerRoster($player_id, $roster_id) {
       $stmt = $this->conn->prepare("
           INSERT INTO player_roster (player_id, roster_id)
           VALUES (:pid, :rid)
@@ -32,9 +32,9 @@
           http_response_code(500);
           return $this->json(["error" => "Failed to add player to roster"]);
       }
-  }
+    }
 
-  public function deletePlayerRoster($player_id, $roster_id) {
+    public function deletePlayerRoster($player_id, $roster_id) {
       $stmt = $this->conn->prepare("
           DELETE FROM player_roster WHERE player_id = :pid AND roster_id = :rid
       ");
@@ -47,7 +47,105 @@
           http_response_code(404);
           return $this->json(["error" => "Entry not found"]);
       }
-  }
+    }
+
+    public function getAvailableRostersForPlayer($playerId,$maxPlayers = MAX_PLAYERS) {
+        $sql = "
+            SELECT r.id, r.name
+            FROM roster r
+            WHERE r.id NOT IN (
+                SELECT pr.roster_id 
+                FROM player_roster pr 
+                WHERE pr.player_id = :player_id_1
+            )
+            AND (
+                SELECT COUNT(*) 
+                FROM player_roster pr2 
+                WHERE pr2.roster_id = r.id
+            ) < :max_players
+            AND r.tournament_id NOT IN (
+                SELECT r2.tournament_id
+                FROM player_roster pr3
+                JOIN roster r2 ON pr3.roster_id = r2.id
+                WHERE pr3.player_id = :player_id_2
+            )
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':player_id_1', $playerId, PDO::PARAM_INT);
+        $stmt->bindValue(':player_id_2', $playerId, PDO::PARAM_INT);
+        $stmt->bindValue(':max_players', $maxPlayers, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($result)) {
+            return $this->json($result);
+        } else {
+            http_response_code(404);
+            return $this->json(["error" => "No available rosters found"]);
+        }
+    }
+
+    public function getAvailablePlayersForRoster($rosterId) {
+        $sql = "
+            SELECT p.id, p.first_name, p.last_name
+            FROM player p
+            WHERE p.id NOT IN (
+                SELECT pr.player_id
+                FROM player_roster pr
+                WHERE pr.roster_id = :roster_id_1
+            )
+            AND p.id NOT IN (
+                SELECT pr.player_id
+                FROM player_roster pr
+                JOIN roster r ON pr.roster_id = r.id
+                WHERE r.tournament_id = (
+                    SELECT tournament_id
+                    FROM roster
+                    WHERE id = :roster_id_2
+                )
+            )
+        ";
+    
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':roster_id_1', $rosterId, PDO::PARAM_INT);
+        $stmt->bindValue(':roster_id_2', $rosterId, PDO::PARAM_INT);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+        if (!empty($result)) {
+            return $this->json($result);
+        } else {
+            http_response_code(404);
+            return $this->json(["error" => "No available players found"]);
+        }
+    }
+
+    public function getAvailablePlayersForDuel($duelId) {
+        $sql = "
+            SELECT p.id, p.first_name, p.last_name
+            FROM player p
+            JOIN player_roster pr ON p.id = pr.player_id
+            JOIN roster r ON pr.roster_id = r.id
+            JOIN duel d ON r.id IN (d.roster1_id, d.roster2_id)
+            WHERE d.id = :duel_id
+        ";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':duel_id', $duelId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($result)) {
+            return $this->json($result);
+        } else {
+            http_response_code(404);
+            return $this->json(["error" => "No players found for this duel"]);
+        }
+    }
 
   // TODO:
   // public function getAlltimeGoals($player_id)

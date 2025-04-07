@@ -102,8 +102,32 @@ class Duel {
           return $this->json(["error" => "Failed to delete duel"]);
       }
   }
-}
+  
+    public function getAvailableDuelsForPlayer($player_id) {
+        $stmt = $this->conn->prepare("
+            SELECT d.*
+            FROM duel d
+            JOIN roster r1 ON d.roster1_id = r1.id
+            JOIN roster r2 ON d.roster2_id = r2.id
+            JOIN player_roster pr1 ON pr1.roster_id = r1.id
+            JOIN player_roster pr2 ON pr2.roster_id = r2.id
+            WHERE pr1.player_id = :player_id_1 OR pr2.player_id = :player_id_2
+            GROUP BY d.id
+        ");
+        $stmt->bindParam(':player_id_1', $player_id, PDO::PARAM_INT);
+        $stmt->bindParam(':player_id_2', $player_id, PDO::PARAM_INT);
+        $stmt->execute();
 
+        $duels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($duels) {
+            return $this->json($duels);
+        } else {
+            http_response_code(404);
+            return $this->json(["error" => "No duels found for the player"]);
+        }
+    }
+
+}
 // TODO:
 // public function getScore($duel_id)
 // public function changeState($duel_id, $state)
