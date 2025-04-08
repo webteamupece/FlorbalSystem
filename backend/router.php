@@ -54,6 +54,7 @@ $uri = $_SERVER['REQUEST_URI'];
 $path = parse_url($uri, PHP_URL_PATH);
 $segments = explode('/', trim($path, '/'));
 
+
 if($segments[0] === 'api') {
     switch($segments[1]) {
     // ----------------------------------------------------------------------------------------------
@@ -163,7 +164,7 @@ if($segments[0] === 'api') {
                         echo $goal->updateGoal($segments[2], $segments[3], $data->goal_count, $data->own_goal_count);
                     }
                     break;
-                    
+
                 case 'DELETE':
                     if (isset($segments[2]) && isset($segments[3])) {
                         echo $goal->deleteGoal($segments[2], $segments[3]);
@@ -427,6 +428,20 @@ if($segments[0] === 'api') {
     
             $playerRoster = new PlayerRoster();
             echo $playerRoster->getAvailablePlayersForDuel($duelId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+    case 'available_rosters_for_tournament':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing tournament_id"]);
+                exit;
+            }
+            $tournamentId = (int)$segments[2];
+    
+            $roster = new Roster();
+            echo $roster->getAvailableRostersForTournament($tournamentId);
             exit;
         }
     // ----------------------------------------------------------------------------------------------

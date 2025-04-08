@@ -95,6 +95,19 @@ class Roster {
           return $this->json(["error" => "Failed to delete roster"]);
       }
   }
+
+    public function getAvailableRostersForTournament($tournament_id) {
+        $stmt = $this->conn->prepare("
+            SELECT * FROM roster
+            WHERE tournament_id = :tournament_id
+        ");
+        $stmt->bindParam(':tournament_id', $tournament_id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rosters = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->json($rosters);
+    }
+
 }
 
 ?>

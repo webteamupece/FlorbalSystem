@@ -34,23 +34,26 @@ class Stage {
   }
 
   public function createStage($code, $name, $order_index) {
-      $stmt = $this->conn->prepare("
-          INSERT INTO stage (code, name, order_index)
-          VALUES (:code, :name, :order_index)
-      ");
-      $stmt->bindParam(':code', $code);
-      $stmt->bindParam(':name', $name);
-      $stmt->bindParam(':order_index', $order_index, PDO::PARAM_INT);
+    try {
+        $stmt = $this->conn->prepare("
+            INSERT INTO stage (code, name, order_index)
+            VALUES (:code, :name, :order_index)
+        ");
+        $stmt->bindParam(':code', $code);
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':order_index', $order_index, PDO::PARAM_INT);
 
-      if ($stmt->execute()) {
-          return $this->json([
-              "message" => "Stage created",
-              "id" => $this->conn->lastInsertId()
-          ]);
-      } else {
-          http_response_code(500);
-          return $this->json(["error" => "Failed to create stage"]);
-      }
+        if ($stmt->execute()) {
+            return $this->json([
+                "message" => "Stage created",
+                "id" => $this->conn->lastInsertId()
+            ]);
+        }
+    } catch (PDOException $e) {
+        // Spracovanie chyby
+        http_response_code(400); // Nastav HTTP kód na 400 (Bad Request)
+        return $this->json(["error" => "Failed to create stage", "details" => $e->getMessage()]);
+    }
   }
 
   public function updateStage($id, $code, $name, $order_index) {

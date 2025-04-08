@@ -97,7 +97,7 @@ $conn = ConnectToDB();
             <button type="button" onclick="incrementValue('ownGoalCount')">+</button>
         </label>     -->
         <!-- ???     -->
-        <button id="submitBtn" style="display:none;margin-top:1em;">Odoslať</button>
+        <button id="submitBtn" style="display:none;margin-top:1em;" disabled>Odoslať</button>
     </div>
 
     <pre id="output"></pre>
@@ -477,7 +477,10 @@ $conn = ConnectToDB();
             stage: [{
                     name: 'code',
                     label: 'Kód fázy',
-                    type: 'text'
+                    type: 'select',
+                    options: [
+                        { value: 'group', label: 'Skupinová fáza' },
+                    ]
                 },
                 {
                     name: 'name',
@@ -498,28 +501,43 @@ $conn = ConnectToDB();
                 {
                     name: 'state',
                     label: 'Stav zápasu',
-                    type: 'text'
+                    type: 'select',
+                    options: [
+                        { value: 'scheduled', label: 'Naplánovaný' },
+                        { value: 'ongoing', label: 'Prebiehajúci' },
+                        { value: 'finished', label: 'Ukončený' }
+                    ]
                 },
                 {
                     name: 'stage_id',
                     label: 'ID fázy',
-                    type: 'number'
+                    type: 'select',
+                    optionsEndpoint: '/api/stage',
+                    optionsEndpointBasic: '/api/stage'
                 },
                 {
                     name: 'tournament_id',
                     label: 'ID turnaja',
-                    type: 'number'
-                },
-                {
-                    name: 'roster1_id',
-                    label: 'ID zostavy 1',
-                    type: 'number'
-                },
-                {
-                    name: 'roster2_id',
-                    label: 'ID zostavy 2',
-                    type: 'number'
-                }
+                    type: 'select',
+                    optionsEndpoint: '/api/torunament',
+                    optionsEndpointBasic: '/api/tournament',
+                    rosters: [
+                        {
+                            name: 'roster1_id',
+                            label: 'ID zostavy 1',
+                            type: 'select',
+                            optionsEndpoint: '/api/roster',
+                            optionsEndpointBasic: '/api/roster'
+                        },
+                        {
+                            name: 'roster2_id',
+                            label: 'ID zostavy 2',
+                            type: 'select',
+                            optionsEndpoint: '/api/roster',
+                            optionsEndpointBasic: '/api/roster'
+                        }
+                    ]
+                }                
             ],
             roster: [{
                     name: 'name',
@@ -570,10 +588,22 @@ $conn = ConnectToDB();
 
         // Pomocná funkcia na vytvorenie select elementu
         function createSelect(field) {
+            
             const select = document.createElement('select');
             select.name = field.name;
             select.required = true;
             select.style.marginBottom = '0.5em';
+
+            // Ak sú definované enum možnosti, pridaj ich
+            if (field.options) {
+                addDefaultOptions(select);
+                field.options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.textContent = option.label;
+                    select.appendChild(opt);
+                });
+            }
 
             return select;
         }
@@ -612,6 +642,7 @@ $conn = ConnectToDB();
 
         // Pomocná funkcia na naplnenie selectu možnosťami
         async function populateSelect(select, data) {
+            
             select.innerHTML = ''; // Vyčisti obsah selectu
             addDefaultOptions(select);
 
@@ -670,7 +701,7 @@ $conn = ConnectToDB();
                     if (field.type === 'select' && field.optionsEndpoint) {
                         //Ak je field typu SELECT
                         const select = createSelect(field);
-
+                        
                         // Pridaj možnosť "--- Vyber ---"
                         addDefaultOptions(select);
 
@@ -681,6 +712,65 @@ $conn = ConnectToDB();
                                 populateSelect(select, data);
                             })
                             .catch(err => console.error('Chyba pri fetchnutí možností:', err));
+                        
+                        if(selected === 'duel' && field.name === 'tournament_id') {
+                            select.addEventListener('change', () => {
+                                const tournamentId = select.value;
+                                const rosterFields = formFields[selected].find(field => field.name === 'tournament_id').rosters;
+                                const roster1Field = rosterFields.find(roster => roster.name === 'roster1_id');
+                                const roster2Field = rosterFields.find(roster => roster.name === 'roster2_id');
+
+                                let roster1Select = document.querySelector(`select[name="${roster1Field.name}"]`);
+                                let roster2Select = document.querySelector(`select[name="${roster2Field.name}"]`);
+
+                                if (!roster1Select) {
+                                    roster1Select = createSelect(roster1Field);
+                                    dataForm.appendChild(document.createElement('br'));
+                                    dataForm.appendChild(document.createTextNode(roster1Field.label + ": "));
+                                    dataForm.appendChild(roster1Select);
+                                }
+
+                                if (!roster2Select) {
+                                    roster2Select = createSelect(roster2Field);
+                                    dataForm.appendChild(document.createElement('br'));
+                                    dataForm.appendChild(document.createTextNode(roster2Field.label + ": "));
+                                    dataForm.appendChild(roster2Select);
+                                }
+
+                                if (tournamentId) {
+                                    fetch(`/api/available_rosters_for_tournament/${tournamentId}`)
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            populateSelect(roster1Select, data);
+                                            populateSelect(roster2Select, data);
+
+                                            // Add event listeners to handle exclusion logic
+                                            roster1Select.addEventListener('change', () => {
+                                                const selectedRoster1 = roster1Select.value;
+                                                const filteredData = data.filter(roster => roster.id.toString() !== selectedRoster1);
+
+                                                // Temporarily remove the event listener to prevent re-fetching
+                                                roster2Select.removeEventListener('change', roster2ChangeHandler);
+                                                populateSelect(roster2Select, filteredData);
+                                                roster2Select.addEventListener('change', roster2ChangeHandler);
+                                            });
+
+                                            const roster2ChangeHandler = () => {
+                                                const selectedRoster2 = roster2Select.value;
+                                                const filteredData = data.filter(roster => roster.id.toString() !== selectedRoster2);
+
+                                                // Temporarily remove the event listener to prevent re-fetching
+                                                roster1Select.removeEventListener('change', roster1ChangeHandler);
+                                                populateSelect(roster1Select, filteredData);
+                                                roster1Select.addEventListener('change', roster1ChangeHandler);
+                                            };
+
+                                            roster2Select.addEventListener('change', roster2ChangeHandler);
+                                        })
+                                        .catch(err => console.error('Chyba pri fetchnutí zostáv:', err));
+                                }
+                            });
+                        }
 
                         // Pridaj event listener na zmenu vnoreného selectu už pre danú tabuľku   
                         select.addEventListener('change', () => {
@@ -702,14 +792,19 @@ $conn = ConnectToDB();
                             // Ak toto nie je prvý vybraný select, pokračuj s fetchom
                             if (firstSelectedField == field.name) {
                                 // Ak je druhý input už vyplnený, tak fetchni možnosti pre druhý select na základe prvého inputu
+                                
                                 fetch(otherField.optionsEndpoint + `/${select.value}`)
                                     .then(res => res.json())
                                     .then(data => {
+                                        console.log(data);
+                                        
                                         // Vyčisti obsah druhého selectu a vlož doň nové možnosti
                                         const select = document.querySelector(`select[name="${otherFieldName}"]`);
-                                        isProgrammaticChange = true; // Nastav programovú zmenu
-                                        document.querySelector('input[name="goal_count"]').value = null;
-                                        document.querySelector('input[name="own_goal_count"]').value = null;
+                                        if(select === 'goal') {
+                                            isProgrammaticChange = true; // Nastav programovú zmenu
+                                            document.querySelector('input[name="goal_count"]').value = null;
+                                            document.querySelector('input[name="own_goal_count"]').value = null;
+                                        }
                                         select.innerHTML = '';
                                         addDefaultOptions(select)
 
@@ -757,6 +852,14 @@ $conn = ConnectToDB();
 
                         dataForm.appendChild(label);
                         dataForm.appendChild(select);
+
+                    } else if (field.type === 'select' && !field.optionsEndpoint) {
+                        //Ak je field typu SELECT bez endpointu
+                        const select = createSelect(field);
+
+                        dataForm.appendChild(label);
+                        dataForm.appendChild(select);
+
                     } else if (field.type === 'button') {
                         //Ak je field typu BUTTON
 
@@ -796,8 +899,42 @@ $conn = ConnectToDB();
                     }
                     if (!(selected == 'goal' && field.name == 'own_goal_count' || field.name == 'goal_count')) dataForm.appendChild(document.createElement('br'));
                 });
+                validateForm();
+                document.querySelectorAll('#dataForm input, #dataForm select').forEach(field => {
+                    field.addEventListener('input', validateForm);
+                    field.addEventListener('change', validateForm);
+                });
             }
         });
+
+        // Funkcia na kontrolu, či sú všetky povinné polia vyplnené
+        function validateForm() {
+            const formFields = document.querySelectorAll('#dataForm input, #dataForm select');
+            let isValid = true;
+
+            formFields.forEach(field => {
+                console.log(field.value);
+                
+                if (!field.value) {
+                    isValid = false;
+                }
+            });
+
+            // Povoľ alebo zakáž tlačidlo "Odoslať"
+            console.log(isValid);
+            
+            document.getElementById('submitBtn').disabled = !isValid;
+        }
+
+        // Pridajte event listener na všetky vstupné polia a selecty
+        document.querySelectorAll('#dataForm input, #dataForm select').forEach(field => {
+            field.addEventListener('input', validateForm);
+            field.addEventListener('change', validateForm);
+        });
+
+        // Inicializujte kontrolu pri načítaní stránky
+        // document.addEventListener('DOMContentLoaded', validateForm);
+
 
         // Funkcia na hlboké porovnanie objektov
         function deepEqual(obj1, obj2) {
@@ -898,6 +1035,8 @@ $conn = ConnectToDB();
                 });
 
                 if (response.ok) {
+                    console.log(response);
+                    
                     console.log('Údaj bol uložený');
                 } else {
                     console.log('Nastala chyba pri ukladaní.');
