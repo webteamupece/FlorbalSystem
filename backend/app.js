@@ -15,12 +15,12 @@ async function fetchAndFill(url, selectId, labelFn) {
 }
 
 function refreshAllDropdowns() {
-    fetchAndFill('/city/list', 'orgCitySelect', c => c.name);
-    fetchAndFill('/city/list', 'tournamentCitySelect', c => c.name);
-    fetchAndFill('/organization/list', 'rosterOrgSelect', o => o.name);
-    fetchAndFill('/tournament/list', 'rosterTournamentSelect', t => `${t.name} (${t.year})`);
-    fetchAndFill('/roster/list', 'rosterSelect', r => r.name);
-    fetchAndFill('/player/list', 'playerSelect', p => `${p.player_first_name} ${p.player_last_name} (#${p.jersey_number})`);
+    fetchAndFill('/city', 'orgCitySelect', c => c.name);
+    fetchAndFill('/city', 'tournamentCitySelect', c => c.name);
+    fetchAndFill('/organization', 'rosterOrgSelect', o => o.name);
+    fetchAndFill('/tournament', 'rosterTournamentSelect', t => `${t.name} (${t.year})`);
+    fetchAndFill('/roster', 'rosterSelect', r => r.name);
+    fetchAndFill('/player', 'playerSelect', p => `${p.player_first_name} ${p.player_last_name} (#${p.jersey_number})`);
 }
 
 async function createCity() {

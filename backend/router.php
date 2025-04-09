@@ -17,42 +17,19 @@ require_once __DIR__ . '/class/Roster.class.php';
 require_once __DIR__ . '/class/Stage.class.php';
 require_once __DIR__ . '/class/Tournament.class.php';
 
-/*$routes = [
-    '/api/city/create' => 'createCity',
-    '/api/city/list' => 'listCities',
-    '/api/organization/create' => 'createOrganization',
-    '/api/organization/list' => 'listOrganizations' ,
-    '/api/tournament/create' => 'createTournament',
-    '/api/tournament/list' => 'listTournaments',
-    '/api/roster/create' => 'createRoster',
-    '/api/roster/list' => 'listRosters',
-    '/api/player/create' => 'createPlayer',
-    '/api/player/list' => 'listPlayers',
-    '/api/player_roster/add' => 'addPlayerToRoster',
-];
-
-$currentUrl = strtok($_SERVER['REQUEST_URI'], '?');
-$method = $_SERVER['REQUEST_METHOD'];
-
-header('Content-Type: application/json; charset=utf-8');
-
-if (isset($routes[$currentUrl])) {
-    $handler = $routes[$currentUrl];
-    $response = $handler();
-    echo json_encode($response);
-} else {
-    http_response_code(404);
-    echo json_encode(['error' => 'Endpoint not found']);
-}*/
-
-
 header("Content-Type: application/json; charset=utf-8");
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = $_SERVER['REQUEST_URI'];
 
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    validatePassword();
+}
+
 $path = parse_url($uri, PHP_URL_PATH);
 $segments = explode('/', trim($path, '/'));
+
+
 
 if($segments[0] === 'api') {
     switch($segments[1]) {
@@ -371,5 +348,15 @@ if($segments[0] === 'api') {
             http_response_code(404);
             echo json_encode(["error" => "Endpoint not found"]);
             return;
+    }
+}
+
+
+function validatePassword() {
+    $password = $_SERVER['HTTP_PASSWORD'] ?? '';
+    if ($password !== 'admin123') {
+        http_response_code(403);
+        echo json_encode(["error" => "Zakázaný prístup, potrebujes povolenie na toto"]);
+        exit;
     }
 }

@@ -10,21 +10,15 @@
     <title>Marek the Nebojácny was here</title>
 </head>
 <body>
+    <h2>Nastaviť heslo pre API volania</h2>
+    <label for="apiPassword">Heslo:</label>
+    <input type="password" id="apiPassword" placeholder="Zadaj heslo">
+    <button onclick="setPassword()">Použiť heslo</button>
+    <p id="passwordStatus" style="color: green;"></p>
+
     <h2>Získať entitu podľa ID alebo všetky entity</h2>
 
     <label for="entityType">Typ entity:</label>
-    <!-- <select id="entityType">
-        <option value="city">Mesto</option>
-        <option value="duel">Zápas</option>
-        <option value="goal">Gól</option>
-        <option value="organization">Organizácia</option>
-        <option value="player">Hráč</option>
-        <option value="player_roster">Hráči v tíme</option>
-        <option value="roster">Organizácia</option>
-        <option value="stage">Typ zápasu</option>
-        <option value="tournament">Turnaj</option>
-    </select> -->
-
     <select id="entityType">
     <?php
         $stmt = $conn->query("SHOW TABLES");
@@ -41,12 +35,14 @@
     <button onclick="loadEntityFromDropdown()">Zobraziť entitu</button>
     <button onclick="deleteEntityFromDropdown()">Vymazať entitu</button>
 
+    
     <h2>Vytvoriť nové mesto</h2>
+    <div style="display: flex; justify-content: space-between">
     <form id="cityForm" onsubmit="submitCity(event)" novalidate>
         <label>Názov mesta: <input type="text" id="cityName" required></label><br><br>
         <button type="submit">Odoslať</button>
     </form>
-
+    </div>
     <h2>Zobraziť všetky mestá</h2>
     <button onclick="loadAllEntities('organization')">Zobraziť mestá</button>
 
@@ -90,6 +86,28 @@
     <pre id="output"></pre>
 
     <script>
+        let apiPassword = '';
+
+        // Function to set the password
+        function setPassword() {
+            const passwordInput = document.getElementById('apiPassword').value.trim();
+            if (passwordInput) {
+                apiPassword = passwordInput;
+                document.getElementById('passwordStatus').textContent = '✅ Heslo bolo nastavené.';
+            } else {
+                document.getElementById('passwordStatus').textContent = '❌ Zadaj platné heslo.';
+            }
+        }
+
+        // Helper function to include the password in headers
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiPassword) {
+                headers['password'] = apiPassword;
+            }
+            return headers;
+        }
+
         function getSelectedEntity() {
             return document.getElementById("entityType").value;
         }
@@ -126,7 +144,7 @@
 
             fetch('api/city', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({ name })
             })
             .then(res => res.json().then(json => ({ status: res.status, json })))
@@ -153,7 +171,7 @@
 
             fetch(`api/city/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({ name })
             })
             .then(res => res.json())
@@ -178,7 +196,7 @@
 
             fetch('api/organization', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({ short_name, full_name, city_id })
             })
             .then(res => res.json().then(json => ({ status: res.status, json })))
@@ -207,7 +225,7 @@
 
             fetch(`api/organization/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getHeaders(),
                 body: JSON.stringify({ short_name, full_name, city_id })
             })
             .then(res => res.json())
@@ -220,7 +238,9 @@
         }
     // ------------------------------------------------------------------------------------
         function loadAllEntities(entity) {
-            fetch(`api/${entity}`)
+            fetch(`api/${entity}`, {
+                headers: getHeaders()
+            })
             .then(res => res.json())
             .then(data => {
                 document.getElementById("output").textContent = JSON.stringify(data, null, 2);
@@ -232,7 +252,9 @@
         
         function loadEntity(entity, id) {
             if (!id) return;
-            fetch(`api/${entity}/${id}`)
+            fetch(`api/${entity}/${id}`, {
+                headers: getHeaders()
+            })
             .then(res => res.json())
             .then(data => {
                 document.getElementById("output").textContent = JSON.stringify(data, null, 2);
@@ -245,7 +267,8 @@
         function deleteEntity(entity, id) {
             if (!id) return;
             fetch(`api/${entity}/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: getHeaders()
             })
             .then(res => res.json())
             .then(data => {
@@ -257,7 +280,9 @@
         }
     // ------------------------------------------------------------------------------------
         async function fetchAndFill(endpoint, selectId, labelCallback) {
-        const res = await fetch(`/api/${endpoint}`);
+        const res = await fetch(`/api/${endpoint}`, {
+            headers: getHeaders()
+        });
         const data = await res.json();
         const select = document.getElementById(selectId);
         select.innerHTML = '';
@@ -282,7 +307,7 @@
 
         const res = await fetch("/api/player_roster", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(),
             body: JSON.stringify({ player_id: playerId, roster_id: rosterId })
         });
 
@@ -297,7 +322,7 @@
 
         const res = await fetch("/api/goal", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: getHeaders(),
             body: JSON.stringify({ player_id: playerId, duel_id: duelId, goal_count: goalCount, own_goal_count: ownGoalCount })
         });
 
@@ -305,12 +330,16 @@
         }
 
         async function loadPlayerRosters() {
-        const res = await fetch("/api/player_roster");
+        const res = await fetch("/api/player_roster", {
+            headers: getHeaders()
+        });
         document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
         }
 
         async function loadGoals() {
-        const res = await fetch("/api/goal");
+        const res = await fetch("/api/goal", {
+            headers: getHeaders()
+        });
         document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
         }
 
