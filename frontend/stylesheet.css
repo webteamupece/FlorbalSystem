@@ -1,0 +1,645 @@
+/*
+  elm-hot creates an additional div wrapper around the app to make HMR possible.
+  This could break styling in development mode if you are using Elm UI.
+
+  More context in the issue:
+    https://github.com/halfzebra/create-elm-app/issues/320
+*/
+[data-elm-hot="true"] {
+    height: inherit;
+}
+
+html {
+    font-size: 16px; /* setting 1rem*/
+}
+
+body {
+    font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+}
+
+/*NEW*/
+
+/*CSS RESET*/
+* {
+    padding: 0;
+    margin: 0;
+}
+
+/*NAVBAR*/
+/*main navbar*/
+.main-navbar-container {
+    position: relative;
+}
+
+nav.amram-nav {
+    padding: 1rem;
+    margin: 0;
+    background-color: #d9d9d9;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+/*ul with all the items on the left*/
+nav.amram-nav ul {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0;
+    margin: 0;
+}
+
+/*ul and its items*/
+nav.amram-nav ul > li {
+    display: flex;
+    flex-direction: row;
+    gap: 0.1rem;
+    align-items: center;
+
+}
+
+/*anchors in the ul*/
+
+nav.amram-nav a, nav.amram-nav p {
+    color: #454545;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+nav.amram-nav ul > li > svg {
+    fill: #454545;
+}
+
+/*div that contains mode button and documentation*/
+nav.amram-nav div.mo-du-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+/*run speed slider*/
+
+.range-input {
+    border: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    background-color: #d9d9d9;
+    cursor: pointer;
+    width: 6rem;
+    accent-color: #454545;
+    overflow: hidden;
+}
+
+
+/*https://stackoverflow.com/questions/18389224/how-to-style-html5-range-input-to-have-different-color-before-and-after-slider*/
+.range-input::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    color: #828282;
+
+}
+
+
+.range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    background-color: #454545;
+    height: 1rem;
+    width: 1rem;
+
+}
+
+.range-input::-moz-range-thumb {
+    background-color: #454545;
+    height: 1rem;
+    width: 1rem;
+    border-radius: 0.5rem;
+}
+
+/*FF*/
+.range-input::-moz-range-progress {
+    background-color: #454545;
+}
+
+.range-input::-moz-range-track {
+    background-color: #828282;
+}
+
+/* IE*/
+.range-input::-ms-fill-lower {
+    background-color: #454545;
+}
+
+.range-input::-ms-fill-upper {
+    background-color: #828282;
+}
+
+nav.amram-nav ul > li.slider-li:hover {
+    background-color: inherit;
+}
+
+nav.amram-nav ul > li.slider-li:active {
+    background-color: inherit;
+}
+
+
+/*mode button*/
+
+button.mode-btn {
+    min-width: 4rem;
+    color: white;
+    background-color: #454545;
+    padding: 0.2rem;
+    border-radius: 50px 50px 50px 50px;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+
+/*documentation link with icon*/
+
+#documentation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    fill: #454545;
+
+}
+
+/*hovering styles for navbar*/
+nav.amram-nav ul > li:hover {
+    background-color: #1EAEE1;
+    border-radius: 5px;
+}
+
+nav.amram-nav ul > li:hover a, nav.amram-nav ul > li:hover p {
+    color: #E1511E;
+}
+
+nav.amram-nav ul > li:hover > svg {
+    fill: #E1511E;
+}
+
+/*clicked styles for navbar*/
+nav.amram-nav ul > li:active {
+    background-color: #18e730;
+    border-radius: 5px;
+}
+
+nav.amram-nav ul > li:active a, nav.amram-nav ul > li:active p {
+    color: #E718CF;
+}
+
+nav.amram-nav ul > li:active > svg {
+    fill: #E718CF;
+}
+
+#toggle-run a, #toggle-run p {
+    min-width: 60px;
+}
+
+/*DIALOG*/
+
+dialog {
+    position: absolute;
+    background: #d9d9d9;
+    z-index: 2;
+    left: 50%;
+    top: 20%;
+    transform: translateX(-50%);
+    width: 40%;
+    color: #454545;
+}
+
+.dialog-close {
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+    cursor: pointer;
+}
+
+.dialog-window {
+    min-height: 30vh;
+    min-width: 40vw;
+    max-width: 60vw;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+    overflow: auto;
+}
+
+.dialog-body {
+    padding: 0 2rem 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+}
+
+.dialog-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.dialog h4 {
+    max-width: 50ch;
+    overflow: hidden;
+
+}
+
+
+.dialog button {
+    background-color: #454545;
+    padding: 0.3rem;
+    color: #d9d9d9;
+    border-radius: 50px 50px 50px 50px;
+    border-style: none;
+
+}
+
+.dialog input {
+    color: #454545;
+    padding: 0.3rem;
+    border-radius: 50px 50px 50px 50px;
+    border-style: none;
+    flex-grow: 2;
+    min-width: 1ch;
+}
+
+
+.dialog-footer button {
+    padding: 0.5rem;
+}
+
+
+div.backdrop {
+    background: rgba(69, 69, 69, 0.4);
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    position: fixed;
+    display: none;
+}
+
+
+dialog::backdrop {
+    background: rgba(69, 69, 69, 0.4);
+
+}
+
+/*Particular DIALOGS*/
+
+.folder-selection-container {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    gap: 1rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/*MAIN*/
+
+
+/*TAPES*/
+
+aside.tapes {
+    padding: 0 4rem;
+}
+
+/*the whole tape*/
+.tape {
+    color: #454545;
+    background-color: #d9d9d9;
+    margin: 0.8rem 0;
+    padding: 0.3rem;
+    border: solid 1px #454545;
+    overflow-x: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    fill: #454545;
+}
+
+/*tape annotation*/
+.tape-name {
+    padding: 0.325rem 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0.1rem;
+}
+
+.tape-name > h4 {
+    min-width: 120px;
+    display: inline-flex;
+}
+
+/*tape item container*/
+.tape-item-container {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    margin: 0 1rem;
+}
+
+/*tape item*/
+.tape-item-container div {
+    background-color: #828282;
+    color: white;
+    padding: 0.5rem 0.1rem;
+    min-width: 4ch;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tape-item-container div.current-item {
+    background-color: #1EAEE1;
+}
+
+
+.tape-item-container div.removable-item {
+    padding: 0 0.1rem;
+}
+
+.tape-item-container div.removable-item > svg {
+    cursor: pointer;
+}
+
+
+.tape-item-container div.show-push {
+    background: inherit;
+    padding: 0.325rem 0;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+}
+
+
+/*https://www.w3schools.com/howto/howto_css_hide_arrow_number.asp*/
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.tape-item-container div > input {
+    background-color: inherit;
+    color: white;
+    max-width: 10ch;
+    text-align: center;
+    box-shadow: none;
+    border: none;
+    overflow: scroll;
+    font-size: 1rem;
+    height: 1rem;
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+}
+
+.tape-item-container div > input#push-input {
+    width: 5ch;
+}
+
+
+/*MAIN CONTENT*/
+/*CODE EDITOR*/
+
+main > article {
+    display: flex;
+    flex-grow: 1;
+
+}
+
+
+
+article.code-editor textarea {
+    resize: none;
+    flex-grow: 1;
+    padding: 0.5rem;
+}
+
+.success {
+    background-color: rgba(0, 255, 0, 0.3);
+}
+
+.failure {
+    background-color: rgba(255, 0, 0, 0.3);
+}
+
+
+/*INSTRUCTIONS*/
+
+/*the whole instructions container*/
+article.instructions {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #454545;
+    background-color: #d9d9d9;
+    overflow-y: auto;
+}
+
+/*single instruction container*/
+article.instruction-container {
+    background-color: #d9d9d9;
+    flex-grow: 0;
+    display: flex;
+    border-width: 0.5px 1px;
+    border-style: solid;
+    border-color: #454545;
+}
+
+/*instruction label*/
+div.label {
+    min-width: 10ch;
+    border-right-width: 0.5px;
+    padding-left: 1rem;
+    border-color: #454545;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
+}
+
+/*instruction*/
+div.instruction {
+    border-right-width: 0.5px;
+    padding-left: 1rem;
+    border-color: #454545;
+    flex-grow: 1;
+}
+
+/*current instructions*/
+article.instructions article.instruction-container.current-instruction {
+    background-color: #1EAEE1;
+}
+
+/*REGISTERS*/
+
+/*the whole set of registers*/
+article.registers {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #454545;
+    background-color: #d9d9d9;
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+/*single register container*/
+article.register-container {
+    background-color: #d9d9d9;
+    flex-grow: 0;
+    display: flex;
+    border-width: 0.5px 1px;
+    border-style: solid;
+    border-color: #454545;
+}
+
+/*instruction label*/
+ div.index {
+    border-right-width: 0.5px;
+    padding-left: 1rem;
+    border-color: #454545;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
+}
+
+/*instruction*/
+div.value {
+    border-right-width: 0.5px;
+    padding-left: 1rem;
+    border-color: #454545;
+    flex-grow: 1;
+}
+
+/*error*/
+
+#error {
+    position: fixed;
+    bottom: 1.5rem;
+    width: 3rem;
+    height: 3rem;
+    text-align: center;
+    left: 0.5rem;
+    background-color: firebrick;
+    border-radius: 50%;
+    align-content: center;
+}
+
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+
+main {
+    padding: 0 4rem 1rem 4rem;
+    flex-grow: 1;
+    gap: 1rem;
+    justify-items: stretch;
+    overflow: auto;
+    display: grid;
+
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+"e e e e e e  e e i  i r r "
+"e e e e e e e e i  i r r";
+    grid-auto-rows: 1fr;
+
+}
+
+.code-editor {
+    grid-area: e;
+    max-width: 100%
+}
+
+.instructions {
+    grid-area: i;
+    max-width: 100%
+}
+
+.registers {
+    grid-area: r;
+    max-width: 100%
+}
+
+
+@media (max-width: 1800px) {
+
+    #root {
+        height: 100vh;
+    }
+
+    main {
+        grid-template-columns: repeat(12,1fr);
+        grid-template-areas:
+"e e e e e e  i i i  r r r "
+"e e e e e e  i i i  r r r";
+        grid-auto-rows: 1fr;
+
+    }
+}
+
+
+@media (max-width: 1200px) {
+
+    #root {
+        height: fit-content;
+    }
+
+    main {
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+        grid-template-areas:
+            "e e e e e e"
+            "i i i r r r"
+
+    }
+}
+
+
+@media (max-width: 700px) {
+
+    #root {
+        height: fit-content;
+    }
+
+    main {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "e"
+            "i"
+            "r";
+        grid-template-rows: 500px 500px 500px;
+    }
+
+
+}
