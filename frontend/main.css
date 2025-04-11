@@ -24,10 +24,9 @@ main {
     background-color: white;
     display: grid;
     flex-grow: 1;
-    grid-template-columns: repeat(12, 1fr);
-    grid-template-areas:
-    " . . . c c c c c c . . . ";
-    grid-template-rows: 500px;
+    grid-template-columns: repeat(auto-fit, minmax(700px, 1fr));
+    gap: 2rem;
+    padding: 2rem;
 }
 
 a {
@@ -134,11 +133,23 @@ th, td {
     border: 1px solid black;
 }
 
-#current-matches-container {
-    grid-area: c;
-
+th{
+    padding: 0 0.2rem;
 }
 
+th.score{
+    min-width: 4rem;
+}
+
+td.team-1{
+    padding-left: 1rem;
+    text-align: start;
+}
+
+td.team-2{
+    padding-left: 1rem;
+    text-align: start;
+}
 
 .nav-item li {
     padding: 0.7rem 0;
@@ -149,36 +160,6 @@ th, td {
     border-bottom: 2px solid black;
 }
 
-@media (max-width: 712px) {
-
-    .navbar {
-        padding: 1rem;
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-        grid-template-areas:
-                "name"
-                "nav"
-                "logo";
-    }
-
-    .navbar .nav-item {
-        justify-self: center !important;
-        justify-content: center;
-    }
-
-    main {
-        background-color: white;
-        display: grid;
-        grid-template-columns: repeat(1, 1fr);
-        grid-template-areas: "c";
-        grid-template-rows: 500px;
-    }
-
-    .navbar .nav-item.logo-container {
-        display: none;
-    }
-}
 
 /*LOGIN*/
 
@@ -206,4 +187,52 @@ button{
 .login-btn{
     background-color: #B4121B;
     color: white;
+}
+
+.main-headline{
+    text-align: center;
+}
+
+
+/*MEDIA*/
+
+
+@media (max-width: 712px) {
+
+    .navbar {
+        padding: 1rem;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+                "name"
+                "nav"
+                "logo";
+    }
+
+    .navbar .nav-item {
+        justify-self: center !important;
+        justify-content: center;
+    }
+
+    main {
+        margin-top: 2rem;
+        background-color: white;
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        grid-template-areas: "c";
+        grid-template-rows: 500px;
+    }
+
+    .navbar .nav-item.logo-container {
+        display: none;
+    }
+}
+
+.centered-text{
+    text-align: center;
+}
+
+.category-heading{
+    margin-left: 2rem;
 }
