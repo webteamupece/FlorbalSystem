@@ -12,12 +12,22 @@ $conn = ConnectToDB();
 </head>
 
 <body>
-    <!-- GETTERS AND DELETERS -->
     <h2>Získať entitu podľa ID alebo všetky entity</h2>
 
     <label for="entityType">Typ entity:</label>
+    <!-- <select id="entityType">
+        <option value="city">Mesto</option>
+        <option value="duel">Zápas</option>
+        <option value="goal">Gól</option>
+        <option value="organization">Organizácia</option>
+        <option value="player">Hráč</option>
+        <option value="player_roster">Hráči v tíme</option>
+        <option value="roster">Organizácia</option>
+        <option value="stage">Typ zápasu</option>
+        <option value="tournament">Turnaj</option>
+    </select> -->
+
     <select id="entityType">
-    <option value="" disabled selected>-- Vyber --</option>
         <?php
         $stmt = $conn->query("SHOW TABLES");
         $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -30,10 +40,33 @@ $conn = ConnectToDB();
 
     <label>ID entity:</label>
     <input type="number" id="entityId" placeholder="Zadaj ID (Nezadávaj žiadne na výpis všetkých prvkov)" style="width: 400px;">
-    <button id="loadEntities" onclick="loadEntityFromDropdown()" disabled>Zobraziť entitu</button>
-    <button id="deleteEntity" onclick="deleteEntityFromDropdown()" disabled>Vymazať entitu</button>
-    <div class="divider" style="margin-bottom: 5em;"></div>
-    <!-- SETTERS AND ALTERERS -->
+    <button onclick="loadEntityFromDropdown()">Zobraziť entitu</button>
+    <button onclick="deleteEntityFromDropdown()">Vymazať entitu</button>
+
+    <h2>Priradiť hráča do tímu (player_roster)</h2>
+
+    <label>Hráč:
+        <select id="playerRosterPlayerSelect"></select>
+    </label>
+    <label>Tím:
+        <select id="rosterSelect"></select>
+    </label>
+    <button onclick="addPlayerToRoster()">➕ Pridať</button>
+    <button onclick="loadPlayerRosters()">📄 Zobraziť všetky priradenia</button>
+
+    <h2>Zapísať gól (goal)</h2>
+
+    <label>Hráč:
+        <select id="goalPlayerSelect"></select>
+    </label>
+    <label>Zápas:
+        <select id="duelSelect"></select>
+    </label>
+    <label>Góly: <input type="number" id="goalCount" value="1" min="0"></label>
+    <label>Vlastné góly: <input type="number" id="ownGoalCount" value="0" min="0"></label>
+    <button onclick="addGoal()">⚽ Zapísať</button>
+    <button onclick="loadGoals()">📄 Zobraziť všetky góly</button>
+
     <div class="section">
         <h2>Vloženie / Úprava údaju</h2>
         <label for="insertAlter">Vyber tabuľku:</label>
@@ -48,21 +81,25 @@ $conn = ConnectToDB();
             }
             ?>
         </select>
-        <button id="reloadDropdowns">🔄 Reload</button>
+        <button id="reloadDropdowns" style="margin-top: 1em;">🔄 Reload</button>
 
-        <form id="dataForm" style="padding-top:1em"></form>
-        <button id="submitBtn" style="display:none;" disabled>Odoslať</button>
+        <form id="dataForm" style="margin-top: 1em;"></form>
+        <!-- ??? -->
+        <!-- <label>Góly: 
+            <button type="button" onclick="decrementValue('goalCount')">-</button>
+            <input type="number" id="goalCount" value="1" min="0" style="width: 50px; text-align: center;">
+            <button type="button" onclick="incrementValue('goalCount')">+</button>
+        </label>
+        <br>
+        <label>Vlastné góly: 
+            <button type="button" onclick="decrementValue('ownGoalCount')">-</button>
+            <input type="number" id="ownGoalCount" value="0" min="0" style="width: 50px; text-align: center;">
+            <button type="button" onclick="incrementValue('ownGoalCount')">+</button>
+        </label>     -->
+        <!-- ???     -->
+        <button id="submitBtn" style="display:none;margin-top:1em;" disabled>Odoslať</button>
     </div>
-    <div class="divider" style="margin-bottom: 3em;"></div>
-    <h2>Odstránenie hráča z rosteru</h2>
-    <label for="deletePlayerRoster">Vyber hráča: TODO!</label>
 
-    <div class="divider" style="margin-bottom: 3em;"></div>
-    
-    <h3>Premazanie výstupu:</h3>
-
-    <button onclick="document.getElementById('output').textContent = '';">🧹 Vymazať výstup</button>
-    <h2>Výstup: </h2>
     <pre id="output"></pre>
 
     <script>
@@ -78,11 +115,6 @@ $conn = ConnectToDB();
             const entity = getSelectedEntity();
             const id = getEntityId();
 
-            // if(!entity) {
-            //     document.getElementById("output").textContent = "❌ Vyberte entitu.";
-            //     return;
-            // }
-
             if (id.trim()) {
                 loadEntity(entity, id);
             } else {
@@ -96,8 +128,142 @@ $conn = ConnectToDB();
             deleteEntity(entity, id); // tiež bola vyššie
         }
 
+        function submitCity(event) {
+            event.preventDefault();
+            const name = document.getElementById("cityName").value.trim();
+
+            if (!name) {
+                document.getElementById("output").textContent = "❌ Zadaj názov mesta.";
+                return;
+            }
+
+            fetch('api/city', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name
+                    })
+                })
+                .then(res => res.json().then(json => ({
+                    status: res.status,
+                    json
+                })))
+                .then(({
+                    status,
+                    json
+                }) => {
+                    if (status >= 200 && status < 300) {
+                        document.getElementById("output").textContent = `✅ Mesto vytvorené:\n` + JSON.stringify(json, null, 2);
+                    } else {
+                        document.getElementById("output").textContent = `❌ Chyba ${status}:\n` + JSON.stringify(json, null, 2);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("output").textContent = `❌ Výnimka v komunikácii:\n${err}`;
+                });
+        }
+
+        function updateCity() {
+            const id = document.getElementById("updateCityId").value;
+            const name = document.getElementById("updateCityName").value.trim();
+
+            if (!id || !name) {
+                document.getElementById("output").textContent = "❌ Zadaj ID a nový názov mesta.";
+                return;
+            }
+
+            fetch(`api/city/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    document.getElementById("output").textContent = "❌ Chyba pri úprave: " + err;
+                });
+        }
+
+        function submitOrg(event) {
+            event.preventDefault();
+            const short_name = document.getElementById("shortName").value.trim();
+            const full_name = document.getElementById("fullName").value.trim();
+            const city_id = parseInt(document.getElementById("cityId").value);
+
+            if (!short_name || !full_name || !city_id) {
+                document.getElementById("output").textContent = "❌ Vyplň všetky polia.";
+                return;
+            }
+
+            fetch('api/organization', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        short_name,
+                        full_name,
+                        city_id
+                    })
+                })
+                .then(res => res.json().then(json => ({
+                    status: res.status,
+                    json
+                })))
+                .then(({
+                    status,
+                    json
+                }) => {
+                    if (status >= 200 && status < 300) {
+                        document.getElementById("output").textContent = `✅ Organizácia vytvorená:\n` + JSON.stringify(json, null, 2);
+                    } else {
+                        document.getElementById("output").textContent = `❌ Chyba ${status}:\n` + JSON.stringify(json, null, 2);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById("output").textContent = `❌ Výnimka:\n${err}`;
+                });
+        }
+
+        function updateOrganization() {
+            const id = document.getElementById("updateOrgId").value;
+            const short_name = document.getElementById("updateShort").value.trim();
+            const full_name = document.getElementById("updateFull").value.trim();
+            const city_id = parseInt(document.getElementById("updateCityId").value);
+
+            if (!id || !short_name || !full_name || !city_id) {
+                document.getElementById("output").textContent = "❌ Vyplň všetky polia.";
+                return;
+            }
+
+            fetch(`api/organization/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        short_name,
+                        full_name,
+                        city_id
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(err => {
+                    document.getElementById("output").textContent = "❌ Chyba pri úprave: " + err;
+                });
+        }
         // ------------------------------------------------------------------------------------
-        
         function loadAllEntities(entity) {
             fetch(`api/${entity}`)
                 .then(res => res.json())
@@ -136,15 +302,9 @@ $conn = ConnectToDB();
         }
 
         document.getElementById("entityType").addEventListener("change",() => {
-            if(getSelectedEntity()) {
-                document.getElementById("loadEntities").disabled = false;
-                document.getElementById("deleteEntity").disabled = false;
-            } else {
-                document.getElementById("loadEntities").disabled = true;
-                document.getElementById("deleteEntity").disabled = true;
-            }
-
             if(getSelectedEntity() === "goal" || getSelectedEntity() === "player_roster") {
+                console.log("som tam!");
+                
                 document.getElementById("entityId").disabled = true;
             } else {
                 document.getElementById("entityId").disabled = false;
@@ -152,7 +312,78 @@ $conn = ConnectToDB();
         });
 
         // ------------------------------------------------------------------------------------
+        async function fetchAndFill(endpoint, selectId, labelCallback) {
+            const res = await fetch(`/api/${endpoint}`);
+            const data = await res.json();
+            const select = document.getElementById(selectId);
+            select.innerHTML = '';
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = labelCallback(item);
+                select.appendChild(option);
+            });
+        }
 
+        function loadInitialDropdowns() {
+            fetchAndFill("player", "playerRosterPlayerSelect", p => `${p.id} - ${p.first_name} ${p.last_name}`);
+            fetchAndFill("player", "goalPlayerSelect", p => `${p.id} - ${p.first_name} ${p.last_name}`);
+            fetchAndFill("roster", "rosterSelect", r => `${r.id} - ${r.name}`);
+            fetchAndFill("duel", "duelSelect", d => `${d.id} - duel`);
+        }
+
+        async function addPlayerToRoster() {
+            const playerId = document.getElementById("playerRosterPlayerSelect").value;
+            const rosterId = document.getElementById("rosterSelect").value;
+
+            const res = await fetch("/api/player_roster", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    player_id: playerId,
+                    roster_id: rosterId
+                })
+            });
+
+            document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
+        }
+
+        async function addGoal() {
+            const playerId = document.getElementById("goalPlayerSelect").value;
+            const duelId = document.getElementById("duelSelect").value;
+            const goalCount = parseInt(document.getElementById("goalCount").value);
+            const ownGoalCount = parseInt(document.getElementById("ownGoalCount").value);
+
+            const res = await fetch("/api/goal", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    player_id: playerId,
+                    duel_id: duelId,
+                    goal_count: goalCount,
+                    own_goal_count: ownGoalCount
+                })
+            });
+
+            document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
+        }
+
+        async function loadPlayerRosters() {
+            const res = await fetch("/api/player_roster");
+            document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
+        }
+
+        async function loadGoals() {
+            const res = await fetch("/api/goal");
+            document.getElementById("output").textContent = JSON.stringify(await res.json(), null, 2);
+        }
+
+        loadInitialDropdowns();
+        // ------------------------------------------------------------------------------------
         const insertAlter = document.getElementById('insertAlter');
         const dataForm = document.getElementById('dataForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -516,7 +747,7 @@ $conn = ConnectToDB();
                                     dataForm.appendChild(document.createTextNode(roster2Field.label + ": "));
                                     dataForm.appendChild(roster2Select);
                                 }
-                                
+
                                 if (tournamentId) {
                                     fetch(`/api/available_rosters_for_tournament/${tournamentId}`)
                                         .then(res => res.json())
@@ -525,34 +756,26 @@ $conn = ConnectToDB();
                                             populateSelect(roster2Select, data);
 
                                             // Add event listeners to handle exclusion logic
-                                            const roster1ChangeHandler = () => {
+                                            roster1Select.addEventListener('change', () => {
                                                 const selectedRoster1 = roster1Select.value;
                                                 const filteredData = data.filter(roster => roster.id.toString() !== selectedRoster1);
-                                                const previousValueOfOtherRoster = roster2Select.value;
 
-                                                // Temporarily remove the event listener to prevent re-fetching                              
+                                                // Temporarily remove the event listener to prevent re-fetching
                                                 roster2Select.removeEventListener('change', roster2ChangeHandler);
                                                 populateSelect(roster2Select, filteredData);
                                                 roster2Select.addEventListener('change', roster2ChangeHandler);
-                                                roster2Select.value = previousValueOfOtherRoster;
-                                                validateForm();
-                                            };
+                                            });
 
                                             const roster2ChangeHandler = () => {
                                                 const selectedRoster2 = roster2Select.value;
                                                 const filteredData = data.filter(roster => roster.id.toString() !== selectedRoster2);
-                                                const previousValueOfOtherRoster = roster1Select.value;
 
                                                 // Temporarily remove the event listener to prevent re-fetching
                                                 roster1Select.removeEventListener('change', roster1ChangeHandler);
                                                 populateSelect(roster1Select, filteredData);
                                                 roster1Select.addEventListener('change', roster1ChangeHandler);
-                                                
-                                                roster1Select.value = previousValueOfOtherRoster;
-                                                validateForm();
                                             };
 
-                                            roster1Select.addEventListener('change', roster1ChangeHandler);
                                             roster2Select.addEventListener('change', roster2ChangeHandler);
                                         })
                                         .catch(err => console.error('Chyba pri fetchnutí zostáv:', err));
@@ -562,7 +785,6 @@ $conn = ConnectToDB();
 
                         // Pridaj event listener na zmenu vnoreného selectu už pre danú tabuľku   
                         select.addEventListener('change', () => {
-                            
                             if (isProgrammaticChange) {
                                 isProgrammaticChange = false; // Resetuj stav
                                 return; // Preskoč fetch, ak bola zmena programová
@@ -589,15 +811,8 @@ $conn = ConnectToDB();
                                         
                                         // Vyčisti obsah druhého selectu a vlož doň nové možnosti
                                         const select = document.querySelector(`select[name="${otherFieldName}"]`);
-                                        
-                                        if(selected === 'goal') {
+                                        if(select === 'goal') {
                                             isProgrammaticChange = true; // Nastav programovú zmenu
-                                            let incrementButtons = document.getElementsByClassName("incrementButton");
-                                            let decrementButtons = document.getElementsByClassName("decrementButton");
-                                            // console.log(incrementButtons,decrementButtons);
-                                                                              
-                                            Array.from(document.getElementsByClassName("incrementButton")).forEach(button => button.disabled = true);
-                                            Array.from(document.getElementsByClassName("decrementButton")).forEach(button => button.disabled = true);
                                             document.querySelector('input[name="goal_count"]').value = null;
                                             document.querySelector('input[name="own_goal_count"]').value = null;
                                         }
@@ -624,26 +839,19 @@ $conn = ConnectToDB();
                                         const playerId = document.querySelector(`select[name="player_id"]`).value ?? null;
                                         const duelId = document.querySelector(`select[name="duel_id"]`).value ?? null;
 
-                                        // console.log(playerId,duelId);
-                                        
                                         if (playerId && duelId) {
                                             fetch(`/api/goal/${playerId}/${duelId}`)
                                                 .then(res => res.json())
                                                 .then(data => {
                                                     const goalCountInput = document.querySelector('input[name="goal_count"]');
                                                     const ownGoalCountInput = document.querySelector('input[name="own_goal_count"]');
-                                                    Array.from(document.getElementsByClassName("incrementButton")).forEach(button => button.disabled = false);
                                                     if (!data.error) {
                                                         goalCountInput.value = data.goal_count || 0;
                                                         ownGoalCountInput.value = data.own_goal_count || 0;
-                                                        
-                                                        if(data.goal_count > 0 || data.own_goal_count > 0) {
-                                                            Array.from(document.getElementsByClassName("decrementButton")).forEach(button => button.disabled = false);
-                                                        }
                                                     } else {
                                                         goalCountInput.value = null;
                                                         ownGoalCountInput.value = null;
-                                                        document.getElementById("output").textContent = 'Hráč ešte v tomto zápase neskóroval.';
+                                                        console.log('Hráč ešte v tomto zápase neskóroval.');
                                                     }
                                                 })
                                                 .catch(err => console.error('Chyba pri fetchnutí gólov:', err));
@@ -667,46 +875,26 @@ $conn = ConnectToDB();
                         //Ak je field typu BUTTON
 
                         const incrementButton = document.createElement('button');
-                        const previousFieldName = formFields[selected][index - 1]?.name;
-                        
-                        incrementButton.id = previousFieldName + 'IncrementButton';
-                        incrementButton.className = 'incrementButton';
                         incrementButton.type = 'button';
-                        incrementButton.disabled = true;
                         incrementButton.textContent = '+';
                         incrementButton.style.marginLeft = '0.5em';
                         incrementButton.addEventListener('click', () => {
                             //Pridaj gol
-                            //Ak hráč ešte neskoroval v tom zapase a input je null tak + button setne input na 1
-                            
-                            if (!document.querySelector(`input[name="${previousFieldName}"]`).value) {
-                                document.querySelector(`input[name="${previousFieldName}"]`).value = 1;
-                                document.getElementById(previousFieldName + 'DecrementButton').disabled = false;
-                            } else {
-                                document.querySelector(`input[name="${previousFieldName}"]`).value = parseInt(document.querySelector(`input[name="${previousFieldName}"]`).value) + 1;
-                            }
+                            const previousFieldName = formFields[selected][index - 1]?.name;
+                            document.querySelector(`input[name="${previousFieldName}"]`).value = parseInt(document.querySelector(`input[name="${previousFieldName}"]`).value) + 1;
                             
                             // Zavolaj funkciu na odoslanie formulára
                             handleSubmitForm();
                         });
 
                         const decrementButton = document.createElement('button');
-                        
-                        decrementButton.id = previousFieldName + 'DecrementButton';
-                        decrementButton.className = 'decrementButton';
                         decrementButton.type = 'button';
-                        decrementButton.disabled = true;
                         decrementButton.textContent = '-';
                         decrementButton.style.marginLeft = '0.5em';
                         decrementButton.addEventListener('click', () => {
                             //Uber gol
                             const previousFieldName = formFields[selected][index - 1]?.name;
-                            if(parseInt(document.querySelector(`input[name="${previousFieldName}"]`).value) - 1 == 0) {
-                                document.querySelector(`input[name="${previousFieldName}"]`).value = null;
-                                document.getElementById(previousFieldName + 'DecrementButton').disabled = true;
-                            } else {
-                                document.querySelector(`input[name="${previousFieldName}"]`).value = parseInt(document.querySelector(`input[name="${previousFieldName}"]`).value) - 1;
-                            }
+                            document.querySelector(`input[name="${previousFieldName}"]`).value = parseInt(document.querySelector(`input[name="${previousFieldName}"]`).value) - 1;
 
                             // Zavolaj funkciu na odoslanie formulára
                             handleSubmitForm();
@@ -721,18 +909,7 @@ $conn = ConnectToDB();
                         dataForm.appendChild(input);
                     }
                     if (!(selected == 'goal' && field.name == 'own_goal_count' || field.name == 'goal_count')) dataForm.appendChild(document.createElement('br'));
-                    
                 });
-                // Ak nie su vybraté aj id hráča a id zápasu tak zakáž buttony
-                if (selected === 'goal') {
-                    const playerId = document.querySelector(`select[name="player_id"]`).value;
-                    const duelId = document.querySelector(`select[name="duel_id"]`).value;
-                    
-                    if (!playerId || !duelId) {
-                        Array.from(document.getElementsByClassName("incrementButton")).forEach(button => button.disabled = true);
-                        Array.from(document.getElementsByClassName("decrementButton")).forEach(button => button.disabled = true);
-                    }
-                }
                 validateForm();
                 document.querySelectorAll('#dataForm input, #dataForm select').forEach(field => {
                     field.addEventListener('input', validateForm);
@@ -791,103 +968,83 @@ $conn = ConnectToDB();
         async function handleSubmitForm() {
             const formData = new FormData(dataForm);
             const jsonData = Object.fromEntries(formData.entries());
-
-            //Ak je hodnota golov "" tak nastav na 0
-            if (jsonData.goal_count === "") jsonData.goal_count = '0';
-            if (jsonData.own_goal_count === "") jsonData.own_goal_count = '0';
-            
             const selected = insertAlter.value;
-            const outputElement = document.getElementById('output'); // Pridaná definícia
 
             if (selected === 'goal') {
-            const playerId = jsonData.player_id;
-            const duelId = jsonData.duel_id;
+                const playerId = jsonData.player_id;
+                const duelId = jsonData.duel_id;
 
-            if (playerId && duelId) {
-                try {
-                // Skontroluj, či existuje záznam pre (player_id, duel_id)
-                const checkResponse = await fetch(`/api/goal/${playerId}/${duelId}`);
-                const checkData = await checkResponse.json();
+                if (playerId && duelId) {
+                    try {
+                        // Skontroluj, či existuje záznam pre (player_id, duel_id)
+                        const checkResponse = await fetch(`/api/goal/${playerId}/${duelId}`);
+                        const checkData = await checkResponse.json();
 
-                if (checkResponse.ok && !checkData.error) {
-                    // Prekonvertuj hodnoty na rovnaké typy
-                    checkData.player_id = checkData.player_id.toString();
-                    checkData.duel_id = checkData.duel_id.toString();
-                    checkData.goal_count = checkData.goal_count.toString();
-                    checkData.own_goal_count = checkData.own_goal_count.toString();
+                        if (checkResponse.ok && !checkData.error) {
+                            // Prekonvertuj hodnoty na rovnaké typy
+                            checkData.player_id = checkData.player_id.toString();
+                            checkData.duel_id = checkData.duel_id.toString();
+                            checkData.goal_count = checkData.goal_count.toString();
+                            checkData.own_goal_count = checkData.own_goal_count.toString();
 
-                    // Skontroluj, či sa údaje zhodujú
-                    if (deepEqual(checkData, jsonData)) {
-                        outputElement.textContent = 'Údaje sú už aktuálne, nie je potrebná žiadna aktualizácia.';
-                    return;
-                    }
-                    //Ak hodnoty ktoré sa pokúsim nastaviť sú 0,0 tak vymaž údaj z databázy.
-                    if (jsonData.goal_count === '0' && jsonData.own_goal_count === '0') {
-                        const deleteResponse = await fetch(`/api/goal/${playerId}/${duelId}`, {
-                            method: 'DELETE'
-                        });
+                            // Skontroluj, či sa údaje zhodujú
+                            if (deepEqual(checkData, jsonData)) {
+                                console.log('Údaje sú už aktuálne, nie je potrebná žiadna aktualizácia.');
+                                return;
+                            }
 
-                        if (deleteResponse.ok) {
-                            outputElement.textContent = 'Údaje boli úspešne vymazané.';
+                            // Ak existuje a údaje sa líšia, použijeme PUT na aktualizáciu
+                            const updateResponse = await fetch(`/api/goal/${playerId}/${duelId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(jsonData)
+                            });
+
+                            if (updateResponse.ok) {
+                                console.log('Údaj bol aktualizovaný.');
+                            } else {
+                                console.log('Nastala chyba pri aktualizácii.');
+                            }
                         } else {
-                            outputElement.textContent = 'Nastala chyba pri mazaní.';
-                        }
-                        return;
-                    }  else  {
-                        // Ak existuje a údaje sa líšia, použijeme PUT na aktualizáciu
-                        const updateResponse = await fetch(`/api/goal/${playerId}/${duelId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(jsonData)
-                        });
+                            // Ak neexistuje, použijeme POST na vytvorenie
+                            const createResponse = await fetch(`/api/goal`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(jsonData)
+                            });
 
-                        if (updateResponse.ok) {
-                            outputElement.textContent = JSON.stringify(jsonData, null, 2);
-                        } else {
-                            outputElement.textContent = 'Nastala chyba pri aktualizácii.';
+                            if (createResponse.ok) {
+                                console.log('Údaj bol uložený.');
+                            } else {
+                                console.log('Nastala chyba pri ukladaní.');
+                            }
                         }
+                    } catch (err) {
+                        console.error('Chyba pri overovaní alebo ukladaní údajov:', err);
+                        console.log('Nastala chyba pri komunikácii so serverom.');
                     }
                 } else {
-                    // Ak neexistuje, použijeme POST na vytvorenie
-                    const createResponse = await fetch(`/api/goal`, {
+                    console.log('Prosím, vyplňte všetky povinné polia.');
+                }
+            } else {
+                // Pre ostatné tabuľky použijeme POST
+                const response = await fetch(`/api/${selected}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(jsonData)
-                    });
+                });
 
-                    if (createResponse.ok) {
-                        outputElement.textContent = JSON.stringify(jsonData, null, 2);
-                    } else {
-                        outputElement.textContent = 'Nastala chyba pri ukladaní.';
-                    }
+                if (response.ok) {
+                    console.log('Údaj bol uložený');
+                } else {
+                    console.log('Nastala chyba pri ukladaní.');
                 }
-                } catch (err) {
-                console.error('Chyba pri overovaní alebo ukladaní údajov:', err);
-                outputElement.textContent = 'Nastala chyba pri komunikácii so serverom.';
-                }
-            } else {
-                outputElement.textContent = 'Prosím, vyplňte všetky povinné polia.';
-            }
-            } else {
-            // Pre ostatné tabuľky použijeme POST
-            const response = await fetch(`/api/${selected}`, {
-                method: 'POST',
-                headers: {
-                'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(jsonData)
-            });
-
-            if (response.ok) {
-                const responseData = await response.json();
-                outputElement.textContent = JSON.stringify(responseData, null, 2);
-            } else {
-                outputElement.textContent = 'Nastala chyba pri ukladaní.';
-            }
             }
         }
 

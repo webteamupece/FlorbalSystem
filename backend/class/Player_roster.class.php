@@ -14,7 +14,22 @@
     }
 
     public function getAllPlayerRosters() {
-        $stmt = $this->conn->query("SELECT * FROM player_roster");
+        $sql = "
+            SELECT 
+                pr.player_id, 
+                p.first_name AS player_first_name, 
+                p.last_name AS player_last_name, 
+                pr.roster_id, 
+                r.name AS roster_name
+            FROM 
+                player_roster pr
+            JOIN 
+                player p ON pr.player_id = p.id
+            JOIN 
+                roster r ON pr.roster_id = r.id
+        ";
+
+        $stmt = $this->conn->query($sql);
         return $this->json($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
