@@ -1,4 +1,4 @@
-# toto je moj pokus o cisty html/js s endpointamy na spravu databazy
+# toto je moj pokus o cisty html/js s endpointami na spravu databazy
 Daj `docker-compose up --build` a letis
 #
 backend je tu http://localhost:8080/index.php 

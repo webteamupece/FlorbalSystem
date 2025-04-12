@@ -20,7 +20,7 @@ body {
 }
 
 
-main {
+.table-main {
     background-color: white;
     display: grid;
     flex-grow: 1;
@@ -107,14 +107,14 @@ a {
     gap: 1rem;
 }
 
-.match-table {
+.duel-table {
     border-collapse: collapse;
     border-spacing: 0;
     height: 100%;
     border: 1px solid black;
 }
 
-.match-table thead {
+.duel-table thead {
     color: #B4121B;
     background-color: black;
     border-collapse: collapse;
@@ -122,7 +122,7 @@ a {
     border: 1px solid black;
 }
 
-.match-table th {
+.duel-table th {
     border: none;
 }
 
@@ -215,7 +215,7 @@ button{
         justify-content: center;
     }
 
-    main {
+    .table-main {
         margin-top: 2rem;
         background-color: white;
         display: grid;
@@ -235,4 +235,29 @@ button{
 
 .category-heading{
     margin-left: 2rem;
+}
+
+/*SCORE*/
+.score-container{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.score{
+    font-size: 15rem;
+}
+
+.player-goal-container{
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+}
+
+.team-goal-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
 }
