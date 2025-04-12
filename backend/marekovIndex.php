@@ -195,7 +195,6 @@ $conn = ConnectToDB();
 
         // Funkcia na načítanie hráčov v roster
         function loadPlayersInRoster(rosterId) {
-            console.log(rosterId);
             
             fetch(`/api/players_in_roster/${rosterId}`)
                 .then(response => response.json())
@@ -406,6 +405,11 @@ $conn = ConnectToDB();
                     type: 'select',
                     options: [
                         { value: 'group', label: 'Skupinová fáza' },
+                        { value: 'round_of_sixteen', label: 'Osemfinále' },
+                        { value: 'quarterfinals', label: 'Štvrťfinále' },
+                        { value: 'semifinals', label: 'Semifinále' },
+                        { value: 'third_place', label: 'Zápas o tretie miesto' },
+                        { value: 'finals', label: 'Finále' },
                     ]
                 },
                 {
@@ -567,7 +571,7 @@ $conn = ConnectToDB();
         }
 
         function createEditContainer(selected) {
-            // Vytvor container pre ID pole a tlačidlo Načítať
+            // Vytvor container pre ID dropdown a label
             const idContainer = document.createElement('div');
             idContainer.style.marginTop = '10px';
             idContainer.style.marginBottom = '15px';
@@ -575,26 +579,119 @@ $conn = ConnectToDB();
 
             // Label pre ID
             const idLabel = document.createElement('label');
-            idLabel.textContent = 'ID pre editáciu: ';
+            idLabel.textContent = 'Vyber existujúcu entitu pre editáciu: ';
             idContainer.appendChild(idLabel);
 
-            // Input pre ID
-            const idInput = document.createElement('input');
-            idInput.type = 'number';
-            idInput.id = 'edit-id-input';
-            idInput.placeholder = 'Pre nový záznam ponechaj prázdne';
-            idInput.style.marginRight = '10px';
-            idContainer.appendChild(idInput);
-
-            idInput.addEventListener('input', () => {
-                const idValue = idInput.value;
-                if (idValue) {
-                    loadEntityForEdit(selected);
+            // Select pre ID namiesto input
+            const idSelect = document.createElement('select');
+            idSelect.id = 'edit-id-select';
+            idSelect.style.marginRight = '10px';
+            
+            // Pridaj default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Pre nový záznam vyber túto možnosť';
+            defaultOption.selected = true;
+            idSelect.appendChild(defaultOption);
+            
+            // Načítaj existujúce entity do selectu
+            loadEntitiesForSelect(selected, idSelect);
+            
+            idContainer.appendChild(idSelect);
+            
+            // Event listener pre zmenu v select elemente
+            idSelect.addEventListener('change', function() {
+                const selectedId = this.value;
+                if (selectedId) {
+                    loadEntityForEdit(selected, selectedId);
+                } else {
+                    // Reset formulára pre nový záznam
+                    resetFormForNewEntity(selected);
                 }
             });
 
             // Vloženie containera pred formulár
             dataForm.parentNode.insertBefore(idContainer, dataForm);
+            
+            // Zakážeme select pre tabuľky s kompozitným kľúčom
+            if(selected == 'goal' || selected == 'player_roster') {
+                idSelect.disabled = true;
+            } else {
+                idSelect.disabled = false;
+            }
+        }
+
+        // Funkcia pre načítanie všetkých entít pre daný typ do selectu
+        function loadEntitiesForSelect(entityType, selectElement) {
+            fetch(`/api/${entityType}`)
+                .then(res => res.json())
+                .then(data => {
+                    // Ponechaj default option
+                    const defaultOption = selectElement.options[0];
+                    selectElement.innerHTML = '';
+                    selectElement.appendChild(defaultOption);
+                    
+                    // Pridaj každú entitu do selectu
+                    data.forEach(entity => {
+                        const option = document.createElement('option');
+                        option.value = entity.id;
+                        
+                        // Vytvor informačný text pre option podľa typu entity
+                        let displayText = `ID ${entity.id}`;
+                        
+                        if (entity.name) {
+                            displayText += ` - ${entity.name}`;
+                        } else if (entity.first_name && entity.last_name) {
+                            displayText += ` - ${entity.first_name} ${entity.last_name}`;
+                        } else if (entity.full_name) {
+                            displayText += ` - ${entity.full_name}`;
+                        } else if (entity.short_name) {
+                            displayText += ` - ${entity.short_name}`;
+                        } else if (entity.roster1_id && entity.roster2_id) {
+                            displayText += ` - Zápas medzi zostavami ${entity.roster1_id} a ${entity.roster2_id}`;
+                        }
+                        
+                        option.textContent = displayText;
+                        selectElement.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error(`Chyba pri načítaní entít pre ${entityType}:`, err);
+                    // Ponechaj aspoň default option
+                    const errorOption = document.createElement('option');
+                    errorOption.value = '';
+                    errorOption.textContent = 'Chyba pri načítaní - skús reload';
+                    errorOption.disabled = true;
+                    selectElement.innerHTML = '';
+                    selectElement.appendChild(errorOption);
+                });
+        }
+
+        // Resetovanie formulára pre nový záznam
+        function resetFormForNewEntity(selected) {
+            // Reset formulára
+            dataForm.reset();
+            
+            // Zmena stavu submit tlačidla
+            submitBtn.textContent = 'Odoslať';
+            submitBtn.dataset.mode = 'create';
+            delete submitBtn.dataset.entityId;
+            
+            // Resetovanie selectov s možnosťou závislých hodnôt (napr. roster pre duel)
+            const selectElements = dataForm.querySelectorAll('select');
+            selectElements.forEach(select => {
+                select.selectedIndex = 0;  // Vyber prvú možnosť (--- Vyber ---)
+                select.dispatchEvent(new Event('change'));  // Vyvolaj zmenu pre aktualizáciu závislých polí
+            });
+            
+            // Vyprázdnenie inputov
+            const inputElements = dataForm.querySelectorAll('input');
+            inputElements.forEach(input => {
+                input.value = '';
+            });
+            
+            // Informácia pre používateľa
+            // document.getElementById('output').textContent = 'Formulár pripravený na vytvorenie nového záznamu.';
         }
 
         // Pomocná funkcia na naplnenie selectu možnosťami
@@ -650,26 +747,27 @@ $conn = ConnectToDB();
             const selected = insertAlter.value;
             dataForm.innerHTML = '';
             submitBtn.style.display = selected ? 'inline-block' : 'none';
+            resetFormForNewEntity(selected); // Resetuj formulár pre nový záznam
             
-            // NOVÝ KÓD: Pridaj ID pole a tlačidlo "Načítať" pre editáciu ak nejde o tabuľku goal alebo player_roster
+            // Pridaj ID pole a tlačidlo "Načítať" pre editáciu ak nejde o tabuľku goal alebo player_roster
             if (selected) {
-
                 //Vymaž predchádzajúci input pre ID ak existuje
                 const previousIdInput = document.querySelector('.id-edit-container');
                 if (previousIdInput) {
                     previousIdInput.remove();
                 }
                 createEditContainer(selected);
-                if(selected == 'goal' || selected == 'player_roster') {
-                    document.getElementById('edit-id-input').disabled = true;
-                } else {
-                    document.getElementById('edit-id-input').disabled = false;
-                }
-                IdInputAdded = true; // Nastav, že input bol pridaný
+                // if(selected == 'goal' || selected == 'player_roster') {
+                //     document.getElementById('edit-id-input').disabled = true;
+                // } else {
+                //     document.getElementById('edit-id-input').disabled = false;
+                // }
+                // IdInputAdded = true; // Nastav, že input bol pridaný
             }
-            document.getElementById('edit-id-input').value = ''; // Resetuj ID input
+            // document.getElementById('edit-id-input').value = ''; // Resetuj ID input
 
             if (formFields[selected]) {
+                
                 // Vytvor formulár na základe vybranej tabuľky
                 formFields[selected].forEach((field, index) => {
                     const label = document.createElement('label');
@@ -942,41 +1040,32 @@ $conn = ConnectToDB();
             }
         });
 
-        // Funkcia na načítanie entity pre editáciu
-        async function loadEntityForEdit(entityType) {
-            const idInput = document.getElementById('edit-id-input');
-            const id = idInput.value.trim();
+        // Upravená funkcia loadEntityForEdit
+        function loadEntityForEdit(entityType, id) {
+            if (!id) return;
             
-            if (!id) {
-                alert('Pre editáciu zadaj ID');
-                return;
-            }
-
-            try {
-                // Načítaj údaje entity
-                const response = await fetch(`/api/${entityType}/${id}`);
-                const data = await response.json();
-                
-                if (response.ok && !data.error) {
-                    // Vyplň formulárové polia
-                    fillFormWithEntityData(data);
-                    
-                    // Zmeň text tlačidla na "Aktualizovať"
-                    submitBtn.textContent = 'Aktualizovať';
-                    submitBtn.dataset.mode = 'edit';
-                    submitBtn.dataset.entityId = id;
-                    
-                    // Informuj používateľa
-                    document.getElementById('output').textContent = `Údaje pre ${entityType} s ID ${id} načítané. Zmeňte hodnoty a kliknite na Aktualizovať.`;
-                } else {
-                    // document.getElementById('edit-id-input').value = null;
-                    document.getElementById('reloadDropdowns').click();
-                    document.getElementById('output').textContent = `Entita s ID ${id} nebola nájdená alebo došlo k chybe: ${data.error || 'Neznáma chyba'}`;
-                }
-            } catch (err) {
-                console.error('Chyba pri načítaní entity:', err);
-                document.getElementById('output').textContent = 'Nastala chyba pri komunikácii so serverom.';
-            }
+            fetch(`/api/${entityType}/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.error) {
+                        // Vyplň formulárové polia
+                        fillFormWithEntityData(data);
+                        
+                        // Zmeň text tlačidla na "Aktualizovať"
+                        submitBtn.textContent = 'Aktualizovať';
+                        submitBtn.dataset.mode = 'edit';
+                        submitBtn.dataset.entityId = id;
+                        
+                        // Informuj používateľa
+                        document.getElementById('output').textContent = `Údaje pre ${entityType} s ID ${id} načítané. Zmeňte hodnoty a kliknite na Aktualizovať.`;
+                    } else {
+                        document.getElementById('output').textContent = `Entita s ID ${id} nebola nájdená alebo došlo k chybe: ${data.error || 'Neznáma chyba'}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Chyba pri načítaní entity:', err);
+                    document.getElementById('output').textContent = 'Nastala chyba pri komunikácii so serverom.';
+                });
         }
 
         // Funkcia na vyplnenie formulára údajmi
@@ -1250,7 +1339,7 @@ $conn = ConnectToDB();
                             submitBtn.textContent = 'Odoslať';
                             submitBtn.dataset.mode = 'create';
                             delete submitBtn.dataset.entityId;
-                            document.getElementById('edit-id-input').value = '';
+                            resetFormForNewEntity(selected);
                         }
                     } else {
                         const errorData = await response.json();
