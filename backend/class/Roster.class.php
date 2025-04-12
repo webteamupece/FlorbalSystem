@@ -108,6 +108,20 @@ class Roster {
         return $this->json($rosters);
     }
 
+    public function getPlayersInRoster($roster_id) {
+        $stmt = $this->conn->prepare("
+            SELECT pr.player_id, p.first_name, p.last_name
+            FROM player_roster pr
+            JOIN player p ON pr.player_id = p.id
+            WHERE pr.roster_id = :roster_id
+        ");
+        $stmt->bindParam(':roster_id', $roster_id, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $rosters = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->json($rosters);
+    }
+
 }
 
 ?>

@@ -445,6 +445,20 @@ if($segments[0] === 'api') {
             exit;
         }
     // ----------------------------------------------------------------------------------------------
+    case 'players_in_roster':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing player_id"]);
+                exit;
+            }
+            $playerId = (int)$segments[2];
+    
+            $roster = new Roster();
+            echo $roster->getPlayersInRoster($playerId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
         default:
             http_response_code(404);
             echo json_encode(["error" => "Endpoint not found"]);

@@ -13,28 +13,31 @@ $conn = ConnectToDB();
 
 <body>
     <!-- GETTERS AND DELETERS -->
-    <h2>Získať entitu podľa ID alebo všetky entity</h2>
+    <section>
+        <h2>Získať entitu podľa ID alebo všetky entity</h2>
 
-    <label for="entityType">Typ entity:</label>
-    <select id="entityType">
-    <option value="" disabled selected>-- Vyber --</option>
-        <?php
-        $stmt = $conn->query("SHOW TABLES");
-        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        <label for="entityType">Typ entity:</label>
+        <select id="entityType">
+        <option value="" disabled selected>-- Vyber --</option>
+            <?php
+            $stmt = $conn->query("SHOW TABLES");
+            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        foreach ($tables as $table) {
-            echo "<option value=\"$table\">$table</option>";
-        }
-        ?>
-    </select><br><br>
+            foreach ($tables as $table) {
+                echo "<option value=\"$table\">$table</option>";
+            }
+            ?>
+        </select><br><br>
 
-    <label>ID entity:</label>
-    <input type="number" id="entityId" placeholder="Zadaj ID (Nezadávaj žiadne na výpis všetkých prvkov)" style="width: 400px;">
-    <button id="loadEntities" onclick="loadEntityFromDropdown()" disabled>Zobraziť entitu</button>
-    <button id="deleteEntity" onclick="deleteEntityFromDropdown()" disabled>Vymazať entitu</button>
-    <div class="divider" style="margin-bottom: 5em;"></div>
+        <label>ID entity:</label>
+        <input type="number" id="entityId" placeholder="Zadaj ID (Nezadávaj žiadne na výpis všetkých prvkov)" style="width: 400px;">
+        <button id="loadEntities" onclick="loadEntityFromDropdown()" disabled>Zobraziť entitu</button>
+        <button id="deleteEntity" onclick="deleteEntityFromDropdown()" disabled>Vymazať entitu</button>
+        <div class="divider" style="margin-bottom: 5em;"></div>
+    </section>
+
     <!-- SETTERS AND ALTERERS -->
-    <div class="section">
+    <section>
         <h2>Vloženie / Úprava údaju</h2>
         <label for="insertAlter">Vyber tabuľku:</label>
         <select id="insertAlter">
@@ -52,16 +55,37 @@ $conn = ConnectToDB();
 
         <form id="dataForm" style="padding-top:1em"></form>
         <button id="submitBtn" style="display:none;" disabled>Odoslať</button>
-    </div>
-    <div class="divider" style="margin-bottom: 3em;"></div>
-    <h2>Odstránenie hráča z rosteru</h2>
-    <label for="deletePlayerRoster">Vyber hráča: TODO!</label>
+    </section>
 
-    <div class="divider" style="margin-bottom: 3em;"></div>
+    <!-- REMOVING PLAYER FROM ROSTER -->
+    <section>
+        <div class="divider" style="margin-bottom: 3em;"></div>
+        <h2>Odstránenie hráča z rosteru</h2>
+        <label for="rosterSelect">Vyber roster:</label>
+            <select id="rosterSelect">
+                <option value="" disabled selected>--- Vyber roster ---</option>
+            </select>
+            <button id="reloadRosterBtn" style="margin-left: 10px;">🔄 Reload</button>
+            <br><br>
+            
+            <label for="playerInRosterSelect">Vyber hráča:</label>
+            <select id="playerInRosterSelect" disabled>
+                <option value="" disabled selected>--- Najprv vyber roster ---</option>
+            </select>
+            <br><br>
+            
+            <button id="removePlayerFromRosterBtn" disabled>Odstrániť hráča z rosteru</button>
+
+        <div class="divider" style="margin-bottom: 3em;"></div>
+    </section>
     
-    <h3>Premazanie výstupu:</h3>
 
-    <button onclick="document.getElementById('output').textContent = '';">🧹 Vymazať výstup</button>
+    <!-- CLEARING OUTPUT -->
+    <section>
+        <h3>Premazanie výstupu:</h3>
+        <button onclick="document.getElementById('output').textContent = '';">🧹 Vymazať výstup</button>
+    </section>
+
     <h2>Výstup: </h2>
     <pre id="output"></pre>
 
@@ -77,11 +101,6 @@ $conn = ConnectToDB();
         function loadEntityFromDropdown() {
             const entity = getSelectedEntity();
             const id = getEntityId();
-
-            // if(!entity) {
-            //     document.getElementById("output").textContent = "❌ Vyberte entitu.";
-            //     return;
-            // }
 
             if (id.trim()) {
                 loadEntity(entity, id);
@@ -149,6 +168,133 @@ $conn = ConnectToDB();
             } else {
                 document.getElementById("entityId").disabled = false;
             }
+        });
+
+        // ------------------------------------------------------------------------------------
+
+        // Funkcia na načítanie všetkých rosterov
+        function loadAllRosters() {
+            fetch('/api/roster')
+                .then(response => response.json())
+                .then(data => {
+                    const rosterSelect = document.getElementById('rosterSelect');
+                    rosterSelect.innerHTML = '<option value="" disabled selected>--- Vyber roster ---</option>';
+                    
+                    data.forEach(roster => {
+                        const option = document.createElement('option');
+                        option.value = roster.id;
+                        option.textContent = `${roster.id} - ${roster.name}`;
+                        rosterSelect.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error('Chyba pri načítaní rosterov:', err);
+                    document.getElementById('output').textContent = 'Chyba pri načítaní rosterov.';
+                });
+        }
+
+        // Funkcia na načítanie hráčov v roster
+        function loadPlayersInRoster(rosterId) {
+            console.log(rosterId);
+            
+            fetch(`/api/players_in_roster/${rosterId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const playerSelect = document.getElementById('playerInRosterSelect');
+                    playerSelect.innerHTML = '<option value="" disabled selected>--- Vyber hráča ---</option>';
+                    
+                    if (data.length === 0) {
+                        const option = document.createElement('option');
+                        option.disabled = true;
+                        option.textContent = 'Žiadni hráči v tomto rostere';
+                        playerSelect.appendChild(option);
+                        document.getElementById('removePlayerFromRosterBtn').disabled = true;
+                        return;
+                    }
+                    
+                    data.forEach(playerRoster => {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({
+                            player_id: playerRoster.player_id,
+                            roster_id: rosterId
+                        });
+                        option.textContent = `${playerRoster.player_id} - ${playerRoster.first_name} ${playerRoster.last_name}`;
+                        playerSelect.appendChild(option);
+                    });
+                })
+                .catch(err => {
+                    console.error('Chyba pri načítaní hráčov v rostere:', err);
+                    document.getElementById('output').textContent = 'Chyba pri načítaní hráčov v rostere.';
+                });
+        }
+
+        // Funkcia na odstránenie hráča z rosteru
+        function removePlayerFromRoster() {
+            const playerInRosterSelect = document.getElementById('playerInRosterSelect');
+            const selectedValue = JSON.parse(playerInRosterSelect.value);
+            
+            if (!selectedValue || !selectedValue.player_id || !selectedValue.roster_id) {
+                document.getElementById('output').textContent = 'Prosím, vyber platného hráča z rosteru.';
+                return;
+            }
+            
+            const { player_id, roster_id } = selectedValue;
+            
+            fetch(`/api/player_roster/${player_id}/${roster_id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+                
+                // Aktualizovať zoznam hráčov po úspešnom odstránení
+                loadPlayersInRoster(roster_id);
+                
+                // Zobraziť správu o úspešnej operácii
+                if (!data.error) {
+                    document.getElementById('output').textContent = `Hráč s ID ${player_id} bol úspešne odstránený z rosteru s ID ${roster_id}.`;
+                }
+            })
+            .catch(err => {
+                console.error('Chyba pri odstraňovaní hráča z rosteru:', err);
+                document.getElementById('output').textContent = 'Chyba pri odstraňovaní hráča z rosteru.';
+            });
+        }
+
+        // Načítať rostery do selectu
+        loadAllRosters();
+        
+        // Pridať event listenery
+        const deletePlayerFromRosterSelect = document.getElementById('rosterSelect');
+        const playerInRosterSelect = document.getElementById('playerInRosterSelect');
+        const removeButton = document.getElementById('removePlayerFromRosterBtn');
+        const reloadButton = document.getElementById('reloadRosterBtn');
+        
+        // Pridaný event listener pre reload tlačidlo
+        reloadButton.addEventListener('click', function() {
+            loadAllRosters();
+            playerInRosterSelect.disabled = true;
+            playerInRosterSelect.innerHTML = '<option value="" disabled selected>--- Najprv vyber roster ---</option>';
+            removeButton.disabled = true;
+        });
+
+        deletePlayerFromRosterSelect.addEventListener('change', function() {
+            if (this.value) {
+                loadPlayersInRoster(this.value);
+                playerInRosterSelect.disabled = false;
+            } else {
+                playerInRosterSelect.disabled = true;
+                playerInRosterSelect.innerHTML = '<option value="" disabled selected>--- Najprv vyber roster ---</option>';
+                removeButton.disabled = true;
+            }
+        });
+        
+        playerInRosterSelect.addEventListener('change', function() {
+            removeButton.disabled = !this.value;
+        });
+        
+        removeButton.addEventListener('click', function() {
+            removePlayerFromRoster();
         });
 
         // ------------------------------------------------------------------------------------
@@ -283,9 +429,9 @@ $conn = ConnectToDB();
                     label: 'Stav zápasu',
                     type: 'select',
                     options: [
-                        { value: 'scheduled', label: 'Naplánovaný' },
-                        { value: 'ongoing', label: 'Prebiehajúci' },
-                        { value: 'finished', label: 'Ukončený' }
+                        { value: 'SCHEDULED', label: 'Naplánovaný' },
+                        { value: 'ONGOING', label: 'Prebiehajúci' },
+                        { value: 'FINISHED', label: 'Ukončený' }
                     ]
                 },
                 {
@@ -420,6 +566,37 @@ $conn = ConnectToDB();
             }
         }
 
+        function createEditContainer(selected) {
+            // Vytvor container pre ID pole a tlačidlo Načítať
+            const idContainer = document.createElement('div');
+            idContainer.style.marginTop = '10px';
+            idContainer.style.marginBottom = '15px';
+            idContainer.className = 'id-edit-container';
+
+            // Label pre ID
+            const idLabel = document.createElement('label');
+            idLabel.textContent = 'ID pre editáciu: ';
+            idContainer.appendChild(idLabel);
+
+            // Input pre ID
+            const idInput = document.createElement('input');
+            idInput.type = 'number';
+            idInput.id = 'edit-id-input';
+            idInput.placeholder = 'Pre nový záznam ponechaj prázdne';
+            idInput.style.marginRight = '10px';
+            idContainer.appendChild(idInput);
+
+            idInput.addEventListener('input', () => {
+                const idValue = idInput.value;
+                if (idValue) {
+                    loadEntityForEdit(selected);
+                }
+            });
+
+            // Vloženie containera pred formulár
+            dataForm.parentNode.insertBefore(idContainer, dataForm);
+        }
+
         // Pomocná funkcia na naplnenie selectu možnosťami
         async function populateSelect(select, data) {
             
@@ -452,6 +629,9 @@ $conn = ConnectToDB();
         }
 
         document.getElementById('reloadDropdowns').addEventListener('click', () => {
+            // Resetovať tlačidlo submit
+            submitBtn.textContent = 'Odoslať';
+            submitBtn.dataset.mode = 'create';
             const selectedTable = insertAlter.value; // Ulož aktuálne vybranú tabuľku
             if (selectedTable) {
                 insertAlter.value = selectedTable; // Nastav späť vybranú tabuľku
@@ -465,11 +645,29 @@ $conn = ConnectToDB();
         let isProgrammaticChange = false; // Premenná na sledovanie programovej zmeny
         insertAlter.addEventListener('change', () => {
             let firstSelectedField = null; // Premenná na sledovanie prvého vybraného poľa
-
+            
             // Počúvaj na zmeny v selecte sekcie na Vloženie/Zmenu údaju
             const selected = insertAlter.value;
             dataForm.innerHTML = '';
             submitBtn.style.display = selected ? 'inline-block' : 'none';
+            
+            // NOVÝ KÓD: Pridaj ID pole a tlačidlo "Načítať" pre editáciu ak nejde o tabuľku goal alebo player_roster
+            if (selected) {
+
+                //Vymaž predchádzajúci input pre ID ak existuje
+                const previousIdInput = document.querySelector('.id-edit-container');
+                if (previousIdInput) {
+                    previousIdInput.remove();
+                }
+                createEditContainer(selected);
+                if(selected == 'goal' || selected == 'player_roster') {
+                    document.getElementById('edit-id-input').disabled = true;
+                } else {
+                    document.getElementById('edit-id-input').disabled = false;
+                }
+                IdInputAdded = true; // Nastav, že input bol pridaný
+            }
+            document.getElementById('edit-id-input').value = ''; // Resetuj ID input
 
             if (formFields[selected]) {
                 // Vytvor formulár na základe vybranej tabuľky
@@ -534,6 +732,8 @@ $conn = ConnectToDB();
                                                 roster2Select.removeEventListener('change', roster2ChangeHandler);
                                                 populateSelect(roster2Select, filteredData);
                                                 roster2Select.addEventListener('change', roster2ChangeHandler);
+
+                                                // console.log("Roster2 dáta:",previousValueOfOtherRoster);
                                                 roster2Select.value = previousValueOfOtherRoster;
                                                 validateForm();
                                             };
@@ -548,6 +748,7 @@ $conn = ConnectToDB();
                                                 populateSelect(roster1Select, filteredData);
                                                 roster1Select.addEventListener('change', roster1ChangeHandler);
                                                 
+                                                // console.log("roster1 dáta:",previousValueOfOtherRoster);
                                                 roster1Select.value = previousValueOfOtherRoster;
                                                 validateForm();
                                             };
@@ -741,6 +942,143 @@ $conn = ConnectToDB();
             }
         });
 
+        // Funkcia na načítanie entity pre editáciu
+        async function loadEntityForEdit(entityType) {
+            const idInput = document.getElementById('edit-id-input');
+            const id = idInput.value.trim();
+            
+            if (!id) {
+                alert('Pre editáciu zadaj ID');
+                return;
+            }
+
+            try {
+                // Načítaj údaje entity
+                const response = await fetch(`/api/${entityType}/${id}`);
+                const data = await response.json();
+                
+                if (response.ok && !data.error) {
+                    // Vyplň formulárové polia
+                    fillFormWithEntityData(data);
+                    
+                    // Zmeň text tlačidla na "Aktualizovať"
+                    submitBtn.textContent = 'Aktualizovať';
+                    submitBtn.dataset.mode = 'edit';
+                    submitBtn.dataset.entityId = id;
+                    
+                    // Informuj používateľa
+                    document.getElementById('output').textContent = `Údaje pre ${entityType} s ID ${id} načítané. Zmeňte hodnoty a kliknite na Aktualizovať.`;
+                } else {
+                    // document.getElementById('edit-id-input').value = null;
+                    document.getElementById('reloadDropdowns').click();
+                    document.getElementById('output').textContent = `Entita s ID ${id} nebola nájdená alebo došlo k chybe: ${data.error || 'Neznáma chyba'}`;
+                }
+            } catch (err) {
+                console.error('Chyba pri načítaní entity:', err);
+                document.getElementById('output').textContent = 'Nastala chyba pri komunikácii so serverom.';
+            }
+        }
+
+        // Funkcia na vyplnenie formulára údajmi
+        function fillFormWithEntityData(data) {
+        const selected = insertAlter.value;
+        
+        // Pre každé pole vo formulári
+        Object.entries(data).forEach(([key, value]) => {
+            // Ak nie je ID, pokračuj (ID je len pre editáciu)
+            if (key === 'id') return;
+            
+            // Nájdi zodpovedajúci input/select
+            const field = document.querySelector(`[name="${key}"]`);
+            
+            if (field) {
+                // Nastav hodnotu
+                field.value = value;
+                
+                // Ak ide o tournament_id v duel, simuluj jeho zmenu pre vytvorenie roster selectov
+                if (selected === 'duel' && key === 'tournament_id') {
+                    field.value = value;
+                    
+                    // Keď máme turnaj, postarajme sa o rostery
+                    setTimeout(() => {
+                        ensureRosterSelectsForDuelEdit(value, data.roster1_id, data.roster2_id);
+                    }, 300);
+                    
+                    // Stále vyvolajme event change pre iné závislosti
+                    field.dispatchEvent(new Event('change'));
+                }
+                // Pre ostatné selecty vyvolaj event change normálne
+                else if (field.tagName === 'SELECT') {
+                    field.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+        
+        // Aktivuj tlačidlo odoslania
+        validateForm();
+    }
+
+    // Pridajte túto funkciu na pomoc pri riešení edge cases s rostermi
+    function ensureRosterSelectsForDuelEdit(tournamentId, roster1Id, roster2Id) {
+        if (!tournamentId) return;
+        
+        const rosterFields = formFields.duel.find(field => field.name === 'tournament_id').rosters;
+        const roster1Field = rosterFields.find(roster => roster.name === 'roster1_id');
+        const roster2Field = rosterFields.find(roster => roster.name === 'roster2_id');
+
+        let roster1Select = document.querySelector(`select[name="roster1_id"]`);
+        let roster2Select = document.querySelector(`select[name="roster2_id"]`);
+
+        // Vytvor selecty ak neexistujú
+        if (!roster1Select) {
+            roster1Select = createSelect(roster1Field);
+            dataForm.appendChild(document.createElement('br'));
+            dataForm.appendChild(document.createTextNode(roster1Field.label + ": "));
+            dataForm.appendChild(roster1Select);
+        }
+
+        if (!roster2Select) {
+            roster2Select = createSelect(roster2Field);
+            dataForm.appendChild(document.createElement('br'));
+            dataForm.appendChild(document.createTextNode(roster2Field.label + ": "));
+            dataForm.appendChild(roster2Select);
+        }
+        
+        // Načítaj rostery a nastav hodnoty
+        fetch(`/api/available_rosters_for_tournament/${tournamentId}`)
+            .then(res => res.json())
+            .then(data => {
+                // Načítaj údaje z API
+                if (roster1Id && roster2Id) {
+                    // Pre istotu načítame aj konkrétne rostery, ktoré potrebujeme
+                    Promise.all([
+                        fetch(`/api/roster/${roster1Id}`).then(res => res.json()),
+                        fetch(`/api/roster/${roster2Id}`).then(res => res.json())
+                    ]).then(([roster1, roster2]) => {
+                        // Zabezpečíme, že rostery existujú v options
+                        populateSelect(roster1Select, [...data, roster1]);
+                        populateSelect(roster2Select, [...data, roster2]);
+                        
+                        // Nastavíme hodnoty
+                        roster1Select.value = roster1Id;
+                        roster2Select.value = roster2Id;
+                        
+                        // Vyvoláme udalosti pre validáciu
+                        roster1Select.dispatchEvent(new Event('change'));
+                        roster2Select.dispatchEvent(new Event('change'));
+                    });
+                } else {
+                    // Štandardné naplnenie bez nastavenia hodnôt
+                    populateSelect(roster1Select, data);
+                    populateSelect(roster2Select, data);
+                }
+                
+                // Pridanie event listenerov pre vzájomnú exklúziu
+                // (event listenery z existujúceho kódu)
+            })
+            .catch(err => console.error('Chyba pri fetchnutí zostáv:', err));
+    }
+
         // Funkcia na kontrolu, či sú všetky povinné polia vyplnené
         function validateForm() {
             const formFields = document.querySelectorAll('#dataForm input, #dataForm select');
@@ -798,6 +1136,10 @@ $conn = ConnectToDB();
             
             const selected = insertAlter.value;
             const outputElement = document.getElementById('output'); // Pridaná definícia
+
+            // Zisti, či ide o editáciu alebo nový záznam
+            const isEditMode = submitBtn.dataset.mode === 'edit';
+            const entityId = submitBtn.dataset.entityId;
 
             if (selected === 'goal') {
             const playerId = jsonData.player_id;
@@ -873,21 +1215,52 @@ $conn = ConnectToDB();
                 outputElement.textContent = 'Prosím, vyplňte všetky povinné polia.';
             }
             } else {
-            // Pre ostatné tabuľky použijeme POST
-            const response = await fetch(`/api/${selected}`, {
-                method: 'POST',
-                headers: {
-                'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(jsonData)
-            });
+                // Pre ostatné tabuľky
+                let url = `/api/${selected}`;
+                let method = 'POST';
+                
+                // Ak je režim editácie, použijeme PUT a pridáme ID do URL
+                if (isEditMode) {
+                    url += `/${entityId}`;
+                    method = 'PUT';
+                }
+                
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(jsonData)
+                    });
 
-            if (response.ok) {
-                const responseData = await response.json();
-                outputElement.textContent = JSON.stringify(responseData, null, 2);
-            } else {
-                outputElement.textContent = 'Nastala chyba pri ukladaní.';
-            }
+                    if (response.ok) {
+                        const responseData = await response.json();
+                        
+                        // Ak to bola úspešná editácia, aktualizuj stav
+                        if (isEditMode) {
+                            outputElement.textContent = `Údaje pre ${selected} s ID ${entityId} boli úspešne aktualizované:\n` + 
+                                                    JSON.stringify(responseData, null, 2);
+                        } else {
+                            outputElement.textContent = JSON.stringify(responseData, null, 2);
+                        }
+                        
+                        // Resetuj režim na CREATE po úspešnej operácii
+                        if (isEditMode) {
+                            submitBtn.textContent = 'Odoslať';
+                            submitBtn.dataset.mode = 'create';
+                            delete submitBtn.dataset.entityId;
+                            document.getElementById('edit-id-input').value = '';
+                        }
+                    } else {
+                        const errorData = await response.json();
+                        outputElement.textContent = `Nastala chyba pri ${isEditMode ? 'aktualizácii' : 'ukladaní'}: ` + 
+                                                JSON.stringify(errorData, null, 2);
+                    }
+                } catch (err) {
+                    console.error(`Chyba pri ${isEditMode ? 'aktualizácii' : 'vytváraní'} záznamu:`, err);
+                    outputElement.textContent = 'Nastala chyba pri komunikácii so serverom.';
+                }
             }
         }
 
