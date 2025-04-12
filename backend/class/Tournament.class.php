@@ -98,7 +98,7 @@ class Tournament {
           return $this->json(["error" => "Failed to delete tournament"]);
       }
   }
+  
 }
-
 
 ?>

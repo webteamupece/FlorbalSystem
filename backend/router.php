@@ -30,7 +30,6 @@ $path = parse_url($uri, PHP_URL_PATH);
 $segments = explode('/', trim($path, '/'));
 
 
-
 if($segments[0] === 'api') {
     switch($segments[1]) {
     // ----------------------------------------------------------------------------------------------
@@ -52,7 +51,7 @@ if($segments[0] === 'api') {
                         echo json_encode(["error" => "Missing or empty city name"]);
                         return;
                     }
-                    
+
                     echo $city->createCity($data->name);
                     break;
 
@@ -133,6 +132,13 @@ if($segments[0] === 'api') {
                     $data = json_decode(file_get_contents("php://input"));
                     echo $goal->createGoal($data->player_id, $data->duel_id, $data->goal_count, $data->own_goal_count);
                     break;
+                
+                case 'PUT':
+                    if (isset($segments[2]) && isset($segments[3])) {
+                        $data = json_decode(file_get_contents("php://input"));
+                        echo $goal->updateGoal($segments[2], $segments[3], $data->goal_count, $data->own_goal_count);
+                    }
+                    break;
 
                 case 'DELETE':
                     if (isset($segments[2]) && isset($segments[3])) {
@@ -180,27 +186,27 @@ if($segments[0] === 'api') {
             break;
             
     // ----------------------------------------------------------------------------------------------
-            case 'player_roster':
-                $pr = new PlayerRoster();
-    
-                switch ($method) {
-                    case 'GET':
-                        echo $pr->getAllPlayerRosters(); // no need for ID filtering
-                        break;
-    
-                    case 'POST':
-                        $data = json_decode(file_get_contents("php://input"));
-                        echo $pr->createPlayerRoster($data->player_id, $data->roster_id);
-                        break;
-    
-                    case 'DELETE':
-                        if (isset($segments[2]) && isset($segments[3])) {
-                            echo $pr->deletePlayerRoster($segments[2], $segments[3]);
-                        }
-                        break;
-                }
-    
-                break;
+        case 'player_roster':
+            $pr = new PlayerRoster();
+
+            switch ($method) {
+                case 'GET':
+                    echo $pr->getAllPlayerRosters(); // no need for ID filtering
+                    break;
+
+                case 'POST':
+                    $data = json_decode(file_get_contents("php://input"));
+                    echo $pr->createPlayerRoster($data->player_id, $data->roster_id);
+                    break;
+
+                case 'DELETE':
+                    if (isset($segments[2]) && isset($segments[3])) {
+                        echo $pr->deletePlayerRoster($segments[2], $segments[3]);
+                    }
+                    break;
+            }
+
+            break;
     // ----------------------------------------------------------------------------------------------
         case 'roster':
             $roster = new Roster();
@@ -343,6 +349,90 @@ if($segments[0] === 'api') {
             }
 
             break;
+    // ----------------------------------------------------------------------------------------------
+    case 'available_rosters_for_player':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing player_id"]);
+                exit;
+            }
+            $playerId = (int)$segments[2];
+    
+            $playerRoster = new PlayerRoster();
+            echo $playerRoster->getAvailableRostersForPlayer($playerId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+    case 'available_players_for_roster':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing roster_id"]);
+                exit;
+            }
+            $rosterId = (int)$segments[2];
+    
+            $playerRoster = new PlayerRoster();
+            echo $playerRoster->getAvailablePlayersForRoster($rosterId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+   case 'available_duels_for_player':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing player_id"]);
+                exit;
+            }
+            $playerId = (int)$segments[2];
+    
+            $duel = new Duel();
+            echo $duel->getAvailableDuelsForPlayer($playerId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+    case 'available_players_for_duel':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing duel_id"]);
+                exit;
+            }
+            $duelId = (int)$segments[2];
+    
+            $playerRoster = new PlayerRoster();
+            echo $playerRoster->getAvailablePlayersForDuel($duelId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+    case 'available_rosters_for_tournament':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing tournament_id"]);
+                exit;
+            }
+            $tournamentId = (int)$segments[2];
+    
+            $roster = new Roster();
+            echo $roster->getAvailableRostersForTournament($tournamentId);
+            exit;
+        }
+    // ----------------------------------------------------------------------------------------------
+    case 'players_in_roster':
+        if ($method === 'GET') {
+            if (!isset($segments[2])) {
+                http_response_code(400);
+                echo json_encode(["error" => "Missing player_id"]);
+                exit;
+            }
+            $playerId = (int)$segments[2];
+    
+            $roster = new Roster();
+            echo $roster->getPlayersInRoster($playerId);
+            exit;
+        }
     // ----------------------------------------------------------------------------------------------
         default:
             http_response_code(404);
