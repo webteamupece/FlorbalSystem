@@ -1,4 +1,13 @@
 RewriteEngine On
+
+# If the request is for a file that doesn't exist, or a directory that doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ router.php [QSA,L]
+
+# Redirect everything else to router.php
+# RewriteRule ^(index\.php|index\.html)?$ router.php [L,QSA]
+# Redirect root (localhost/) to router.php
+# RewriteRule ^$ router.php [L,QSA]
+
+# Catch all other requests and redirect them to router.php
+RewriteRule ^ router.php [L,QSA]
