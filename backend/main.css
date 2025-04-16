@@ -261,3 +261,7 @@ button{
     align-items: center;
     gap: 1rem;
 }
+
+select#tournament-select{
+    font-size: 1.5rem;
+}

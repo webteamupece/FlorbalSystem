@@ -126,11 +126,26 @@ class Duel {
             return $this->json(["error" => "No duels found for the player"]);
         }
     }
+    public function getAllTournamentDuels($tournament_id) {
+        $stmt = $this->conn->prepare("
+            SELECT d.*
+            FROM duel d
+            JOIN tournament t ON t.id = d.tournament_id
+            WHERE tournament_id = :tournament_id
+        ");
+        $stmt->bindParam(':tournament_id', $tournament_id, PDO::PARAM_INT);
+        $stmt->execute();
 
+        $duels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($duels) {
+            return $this->json($duels);
+        } else {
+            http_response_code(404);
+            return $this->json(["error" => "No duels found for the tournament"]);
+        }
+    }
 }
 // TODO:
 // public function getScore($duel_id)
 // public function changeState($duel_id, $state)
-
-
 ?>
