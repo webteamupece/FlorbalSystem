@@ -1299,9 +1299,7 @@ $conn = ConnectToDB();
                         // Ak existuje a údaje sa líšia, použijeme PUT na aktualizáciu
                         const updateResponse = await fetch(`/api/goal/${playerId}/${duelId}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: getHeaders(),
                         body: JSON.stringify(jsonData)
                         });
 
@@ -1315,9 +1313,8 @@ $conn = ConnectToDB();
                     // Ak neexistuje, použijeme POST na vytvorenie
                     const createResponse = await fetch(`/api/goal`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getHeaders(),
+                    
                     body: JSON.stringify(jsonData)
                     });
 
@@ -1348,9 +1345,7 @@ $conn = ConnectToDB();
                 try {
                     const response = await fetch(url, {
                         method: method,
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: getHeaders(),
                         body: JSON.stringify(jsonData)
                     });
 
