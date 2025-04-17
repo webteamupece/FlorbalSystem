@@ -3,6 +3,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+
+enum MatchState: string {
+    case Scheduled = 'SCHEDULED';
+    case Ongoing = 'ONGOING';
+    case Finished = 'FINISHED';
+}
+
+
 function ConnectToDB()
 {
     $hostname = "db";

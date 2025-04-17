@@ -14,7 +14,7 @@ class Tournament {
   }
 
   public function getAllTournaments() {
-      $stmt = $this->conn->query("SELECT * FROM tournament ORDER BY year DESC");
+      $stmt = $this->conn->query("SELECT * FROM tournament ORDER BY date DESC");
       $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
       return $this->json($rows);
   }

@@ -1,12 +1,6 @@
 <?php
 
 require_once __DIR__ . '/api/db.php';
-require_once __DIR__ . '/api/city.php';
-require_once __DIR__ . '/api/organization.php';
-require_once __DIR__ . '/api/tournament.php';
-require_once __DIR__ . '/api/roster.php';
-require_once __DIR__ . '/api/player.php';
-require_once __DIR__ . '/api/player_roster.php';
 require_once __DIR__ . '/class/City.class.php';
 require_once __DIR__ . '/class/Duel.class.php';
 require_once __DIR__ . '/class/Goal.class.php';
