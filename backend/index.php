@@ -5,7 +5,6 @@ $conn = ConnectToDB();
 ?>
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +16,7 @@ $conn = ConnectToDB();
 <body>
 <nav class="navbar">
     <div class="nav-item">
-        <h1 >TournamentManGer</h1>
+        <h1>TournamentManGer</h1>
     </div>
     <div class="nav-item navigation-links">
         <ul class="nav-item">
@@ -58,54 +57,50 @@ $conn = ConnectToDB();
         </select>
         <h2>Aktuálne zápasy:</h2>
 
-        <?php
-
-
-        $Duel = new Duel(); // instantiate the class
-
-        $currentTournament = $tournaments[0]; // assumes $tournaments is already defined
-
-        $duels = $Duel->getAllTournamentDuels($currentTournament['id']); // correct method call
-
-        echo $duels; // already JSON
-        ?>
         <table class="duel-table">
             <thead>
             <tr>
-                <th class="time">Time</th>
-                <th class="group">Group</th>
-                <th class="team-1">Team 1</th>
-                <th class="team-2">Team 2</th>
-                <th class="score">Score</th>
-                <th class="state">State</th>
+                <th class="time">Čas</th>
+                <th class="group">Fáza</th>
+                <th class="team-1">Tím 1</th>
+                <th class="team-2">Tím 2</th>
+                <th class="score">Skóre</th>
+                <th class="state">Stav</th>
             </tr>
             </thead>
             <tbody>
-            <tr><td class="time">14:00</td><td class="group">A</td><td class="team-1">Falcons United Football Club</td><td class="team-2">Wolves of the Northern Plains</td><td class="score">6 : 4</td><td class="state">Ongoing</td></tr>
-            <tr><td class="time">16:00</td><td class="group">A</td><td class="team-1">Panthers of the Mountain Range</td><td class="team-2">Dragons of the Sky Realm</td><td class="score">3 : 7</td><td class="state">Ongoing</td></tr>
-            <tr><td class="time">18:00</td><td class="group">A</td><td class="team-1">Sharks from the Deep Ocean</td><td class="team-2">Ravens of the Dark Woods</td><td class="score">5 : 5</td><td class="state">Ongoing</td></tr>
-            <tr><td class="time">20:00</td><td class="group">A</td><td class="team-1">Iron Rhinos of the Savannah</td><td class="team-2">Bears of the Frozen North</td><td class="score">2 : 1</td><td class="state">Finished</td></tr>
 
-            <tr><td class="time">15:00</td><td class="group">B</td><td class="team-1">Mighty Lions Football Club</td><td class="team-2">Cobras of the Desert</td><td class="score">8 : 6</td><td class="state">Finished</td></tr>
-            <tr><td class="time">17:00</td><td class="group">B</td><td class="team-1">Storm Breakers of the Coastal Cliffs</td><td class="team-2">Vikings of the Frozen Seas</td><td class="score">4 : 4</td><td class="state">Ongoing</td></tr>
-            <tr><td class="time">19:00</td><td class="group">B</td><td class="team-1">Titan Warriors of the Eastern Hills</td><td class="team-2">Golden Eagles of the Mountain Summit</td><td class="score">9 : 2</td><td class="state">Finished</td></tr>
-            <tr><td class="time">21:00</td><td class="group">B</td><td class="team-1">Raiders of the Lost Temple</td><td class="team-2">Blizzards of the North Pole</td><td class="score">5 : 3</td><td class="state">Ongoing</td></tr>
-            <tr><td class="time">22:00</td><td class="group">B</td><td class="team-1">Phantoms of the Dark Realm</td><td class="team-2">Spartans of the Golden Age</td><td class="score">1 : 2</td><td class="state">Finished</td></tr>
-            <tr><td class="time">23:00</td><td class="group">B</td><td class="team-1">Hawks of the High Skies</td><td class="team-2">Warriors of the Forgotten Lands</td><td class="score">6 : 6</td><td class="state">Finished</td></tr>
+
+            <?php
+
+
+            $Duel = new Duel(); // instantiate the class
+
+            $currentTournament = $tournaments[0]; // assumes $tournaments is already defined
+
+            $duels = $Duel->getAllTournamentDuelsWithStages($currentTournament['id']); // correct method call
+
+            $duels = json_decode($duels, true);
+            foreach ($duels as $duel) {
+                $time = !empty($duel['starting_time']) ? date('H:i', strtotime($duel['starting_time'])) : 'GG';
+                echo "<tr>";
+                echo "<td class=\"time\">" . htmlspecialchars($time) . "</td>";
+                echo "<td class=\"group\">" . htmlspecialchars($duel['group'] ?? 'A') . "</td>";
+                echo "<td class=\"team-1\">" . htmlspecialchars($duel['roster1_name']) . "</td>";
+                echo "<td class=\"team-2\">" . htmlspecialchars($duel['roster2_name']) . "</td>";
+                echo "<td class=\"score\">" . htmlspecialchars($duel['roster1_score']) . ':' . htmlspecialchars($duel['roster2_score'] ?? 'GG') . "</td>";
+                echo "<td class=\"state\">" . htmlspecialchars($duel['state'] ?? 'Upcoming') . "</td>";
+                echo "</tr>";
+            }
+
+            ?>
+
             </tbody>
         </table>
     </article>
-
-
-
 </main>
 
-
 <script>
-
-
-
-
     // Funkcia na načítanie všetkých turnajov
     function loadTournaments() {
         fetch('/api/tournament')
@@ -229,12 +224,12 @@ $conn = ConnectToDB();
             label: 'Kód fázy',
             type: 'select',
             options: [
-                { value: 'group', label: 'Skupinová fáza' },
-                { value: 'round_of_sixteen', label: 'Osemfinále' },
-                { value: 'quarterfinals', label: 'Štvrťfinále' },
-                { value: 'semifinals', label: 'Semifinále' },
-                { value: 'third_place', label: 'Zápas o tretie miesto' },
-                { value: 'finals', label: 'Finále' },
+                {value: 'group', label: 'Skupinová fáza'},
+                {value: 'round_of_sixteen', label: 'Osemfinále'},
+                {value: 'quarterfinals', label: 'Štvrťfinále'},
+                {value: 'semifinals', label: 'Semifinále'},
+                {value: 'third_place', label: 'Zápas o tretie miesto'},
+                {value: 'finals', label: 'Finále'},
             ]
         },
             {
@@ -258,9 +253,9 @@ $conn = ConnectToDB();
                 label: 'Stav zápasu',
                 type: 'select',
                 options: [
-                    { value: 'SCHEDULED', label: 'Naplánovaný' },
-                    { value: 'ONGOING', label: 'Prebiehajúci' },
-                    { value: 'FINISHED', label: 'Ukončený' }
+                    {value: 'SCHEDULED', label: 'Naplánovaný'},
+                    {value: 'ONGOING', label: 'Prebiehajúci'},
+                    {value: 'FINISHED', label: 'Ukončený'}
                 ]
             },
             {
@@ -371,8 +366,6 @@ $conn = ConnectToDB();
         errorOption.selected = true;
         select.appendChild(errorOption);
     }
-
-
 
 
     // Funkcia pre načítanie všetkých entít pre daný typ do selectu
