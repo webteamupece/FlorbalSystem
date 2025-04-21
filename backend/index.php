@@ -26,16 +26,13 @@ $conn = ConnectToDB();
             <li>
                 <a href="#">Štatistika</a>
             </li>
-            <li>
-                <a href="#">IDK este nieco</a>
-            </li>
 
         </ul>
     </div>
 
     <div class="nav-item logo-container">
 
-        <img src="UPeCe_logo.png">
+        <img src="./UPeCe_logo.png">
 
     </div>
 </nav>
