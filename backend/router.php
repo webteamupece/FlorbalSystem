@@ -11,7 +11,6 @@ require_once __DIR__ . '/class/Roster.class.php';
 require_once __DIR__ . '/class/Stage.class.php';
 require_once __DIR__ . '/class/Tournament.class.php';
 
-header("Content-Type: application/json; charset=utf-8");
 
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = $_SERVER['REQUEST_URI'];
@@ -24,9 +23,10 @@ $path = parse_url($uri, PHP_URL_PATH);
 $segments = explode('/', trim($path, '/'));
 
 
-if($segments[0] === 'api') {
-    switch($segments[1]) {
-    // ----------------------------------------------------------------------------------------------
+if ($segments[0] === 'api') {
+    header("Content-Type: application/json; charset=utf-8");
+    switch ($segments[1]) {
+        // ----------------------------------------------------------------------------------------------
         case 'city':
             $city = new City();
             switch ($method) {
@@ -73,10 +73,10 @@ if($segments[0] === 'api') {
             }
             break;
 
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'duel':
             $duel = new Duel();
-            switch($method) {
+            switch ($method) {
                 case 'GET':
                     if (isset($segments[2])) {
                         echo $duel->getDuel($segments[2]);
@@ -110,7 +110,7 @@ if($segments[0] === 'api') {
             }
             break;
 
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'goal':
             $goal = new Goal();
             switch ($method) {
@@ -126,7 +126,7 @@ if($segments[0] === 'api') {
                     $data = json_decode(file_get_contents("php://input"));
                     echo $goal->createGoal($data->player_id, $data->duel_id, $data->goal_count, $data->own_goal_count);
                     break;
-                
+
                 case 'PUT':
                     if (isset($segments[2]) && isset($segments[3])) {
                         $data = json_decode(file_get_contents("php://input"));
@@ -142,7 +142,7 @@ if($segments[0] === 'api') {
             }
             break;
 
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'organization':
             $organization = new Organization();
             switch ($method) {
@@ -153,7 +153,7 @@ if($segments[0] === 'api') {
                         echo $organization->getAllOrgs();
                     }
                     break;
-            
+
                 case 'POST':
                     $data = json_decode(file_get_contents("php://input"));
                     if (!isset($data->short_name, $data->full_name, $data->city_id)) {
@@ -163,14 +163,14 @@ if($segments[0] === 'api') {
                     }
                     echo $organization->createOrg($data->short_name, $data->full_name, $data->city_id);
                     break;
-            
+
                 case 'PUT':
                     if (isset($segments[2])) {
                         $data = json_decode(file_get_contents("php://input"));
                         echo $organization->updateOrg($segments[2], $data->short_name, $data->full_name, $data->city_id);
                     }
                     break;
-            
+
                 case 'DELETE':
                     if (isset($segments[2])) {
                         echo $organization->deleteOrg($segments[2]);
@@ -178,8 +178,8 @@ if($segments[0] === 'api') {
                     break;
             }
             break;
-            
-    // ----------------------------------------------------------------------------------------------
+
+        // ----------------------------------------------------------------------------------------------
         case 'player_roster':
             $pr = new PlayerRoster();
 
@@ -201,10 +201,10 @@ if($segments[0] === 'api') {
             }
 
             break;
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'roster':
             $roster = new Roster();
-            switch($method) {
+            switch ($method) {
                 case 'GET':
                     if (isset($segments[2])) {
                         echo $roster->getRoster($segments[2]);
@@ -237,7 +237,7 @@ if($segments[0] === 'api') {
                     break;
             }
             break;
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'player':
             $player = new Player();
             switch ($method) {
@@ -268,8 +268,8 @@ if($segments[0] === 'api') {
                     break;
             }
             break;
-    
-    // ----------------------------------------------------------------------------------------------
+
+        // ----------------------------------------------------------------------------------------------
         case 'stage':
             $stage = new Stage();
             switch ($method) {
@@ -280,19 +280,19 @@ if($segments[0] === 'api') {
                         echo $stage->getAllStages();
                     }
                     break;
-            
+
                 case 'POST':
                     $data = json_decode(file_get_contents("php://input"));
                     echo $stage->createStage($data->code, $data->name, $data->order_index);
                     break;
-            
+
                 case 'PUT':
                     if (isset($segments[2])) {
                         $data = json_decode(file_get_contents("php://input"));
                         echo $stage->updateStage($segments[2], $data->code, $data->name, $data->order_index);
                     }
                     break;
-            
+
                 case 'DELETE':
                     if (isset($segments[2])) {
                         echo $stage->deleteStage($segments[2]);
@@ -300,7 +300,7 @@ if($segments[0] === 'api') {
                     break;
             }
             break;
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         case 'tournament':
             $tournament = new Tournament();
             switch ($method) {
@@ -343,104 +343,110 @@ if($segments[0] === 'api') {
             }
 
             break;
-    // ----------------------------------------------------------------------------------------------
-    case 'available_rosters_for_player':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing player_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'available_rosters_for_player':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing player_id"]);
+                    exit;
+                }
+                $playerId = (int)$segments[2];
+
+                $playerRoster = new PlayerRoster();
+                echo $playerRoster->getAvailableRostersForPlayer($playerId);
                 exit;
             }
-            $playerId = (int)$segments[2];
-    
-            $playerRoster = new PlayerRoster();
-            echo $playerRoster->getAvailableRostersForPlayer($playerId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
-    case 'available_players_for_roster':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing roster_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'available_players_for_roster':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing roster_id"]);
+                    exit;
+                }
+                $rosterId = (int)$segments[2];
+
+                $playerRoster = new PlayerRoster();
+                echo $playerRoster->getAvailablePlayersForRoster($rosterId);
                 exit;
             }
-            $rosterId = (int)$segments[2];
-    
-            $playerRoster = new PlayerRoster();
-            echo $playerRoster->getAvailablePlayersForRoster($rosterId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
-   case 'available_duels_for_player':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing player_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'available_duels_for_player':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing player_id"]);
+                    exit;
+                }
+                $playerId = (int)$segments[2];
+
+                $duel = new Duel();
+                echo $duel->getAvailableDuelsForPlayer($playerId);
                 exit;
             }
-            $playerId = (int)$segments[2];
-    
-            $duel = new Duel();
-            echo $duel->getAvailableDuelsForPlayer($playerId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
-    case 'available_players_for_duel':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing duel_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'available_players_for_duel':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing duel_id"]);
+                    exit;
+                }
+                $duelId = (int)$segments[2];
+
+                $playerRoster = new PlayerRoster();
+                echo $playerRoster->getAvailablePlayersForDuel($duelId);
                 exit;
             }
-            $duelId = (int)$segments[2];
-    
-            $playerRoster = new PlayerRoster();
-            echo $playerRoster->getAvailablePlayersForDuel($duelId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
-    case 'available_rosters_for_tournament':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing tournament_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'available_rosters_for_tournament':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing tournament_id"]);
+                    exit;
+                }
+                $tournamentId = (int)$segments[2];
+
+                $roster = new Roster();
+                echo $roster->getAvailableRostersForTournament($tournamentId);
                 exit;
             }
-            $tournamentId = (int)$segments[2];
-    
-            $roster = new Roster();
-            echo $roster->getAvailableRostersForTournament($tournamentId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
-    case 'players_in_roster':
-        if ($method === 'GET') {
-            if (!isset($segments[2])) {
-                http_response_code(400);
-                echo json_encode(["error" => "Missing player_id"]);
+        // ----------------------------------------------------------------------------------------------
+        case 'players_in_roster':
+            if ($method === 'GET') {
+                if (!isset($segments[2])) {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Missing player_id"]);
+                    exit;
+                }
+                $playerId = (int)$segments[2];
+
+                $roster = new Roster();
+                echo $roster->getPlayersInRoster($playerId);
                 exit;
             }
-            $playerId = (int)$segments[2];
-    
-            $roster = new Roster();
-            echo $roster->getPlayersInRoster($playerId);
-            exit;
-        }
-    // ----------------------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------------------------------
         default:
             http_response_code(404);
             echo json_encode(["error" => "Endpoint not found"]);
             return;
     }
+} else if ($segments[0] == 'admin') {
+   validatePassword();
+    include  'marekovIndex_copy.php';
+    exit;
 }
 
 
 function validatePassword() {
-    $password = $_SERVER['HTTP_PASSWORD'] ?? '';
-    if ($password !== 'admin123') {
-        http_response_code(403);
-        echo json_encode(["error" => "Zakázaný prístup, potrebujes povolenie na toto"]);
+    session_start();
+    if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+
+        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI']; // store original URL
+
+        header("Location: /login");
         exit;
     }
 }

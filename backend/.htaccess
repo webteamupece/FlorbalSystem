@@ -1,5 +1,11 @@
 RewriteEngine On
 
+
+
+# Redirect /login to /login.php
+RewriteRule ^login$ login.php [L]
+
+
 # If the request is for a file that doesn't exist, or a directory that doesn't exist
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -9,5 +15,9 @@ RewriteCond %{REQUEST_FILENAME} !-d
 # Redirect root (localhost/) to router.php
 # RewriteRule ^$ router.php [L,QSA]
 
+
+
 # Catch all other requests and redirect them to router.php
 RewriteRule ^ router.php [L,QSA]
+
+
