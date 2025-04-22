@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <nav class="navbar">
     <div class="nav-item">
 
-        <h1>TournamentManGer</h1>
+        <a href="/"><h1>TournamentManGer</h1></a>
 
     </div>
 
@@ -58,6 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <li>
                 <a href="#">Štatistika</a>
             </li>
+
+            <?php
+            if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+                echo' <li><a href="/login">Prihlásiť sa</a>  </li>';
+
+            }else{
+                echo' <li><a href="/logout">Odhlásiť sa</a>  </li>';
+            }
+            ?>
+
         </ul>
     </div>
 

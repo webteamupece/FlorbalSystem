@@ -2,6 +2,7 @@
 require_once __DIR__ . '/api/db.php';
 require_once __DIR__ . '/class/Duel.class.php';
 $conn = ConnectToDB();
+session_start();
 ?>
 
 
@@ -16,7 +17,7 @@ $conn = ConnectToDB();
 <body>
 <nav class="navbar">
     <div class="nav-item">
-        <h1>TournamentManGer</h1>
+        <a href="/"><h1>TournamentManGer</h1></a>
     </div>
     <div class="nav-item navigation-links">
         <ul class="nav-item">
@@ -26,6 +27,14 @@ $conn = ConnectToDB();
             <li>
                 <a href="#">Štatistika</a>
             </li>
+            <?php
+            if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+                echo' <li><a href="/login">Prihlásiť sa</a>  </li>';
+
+            }else{
+                echo' <li><a href="/logout">Odhlásiť sa</a>  </li>';
+            }
+            ?>
 
         </ul>
     </div>
@@ -80,7 +89,7 @@ $conn = ConnectToDB();
             $duels = json_decode($duels, true);
             foreach ($duels as $duel) {
                 $time = !empty($duel['starting_time']) ? date('H:i', strtotime($duel['starting_time'])) : 'GG';
-                echo "<tr>";
+                echo "<tr class=\"clickable-row\" data-id=\"" . htmlspecialchars($duel['id']) . "\">";
                 echo "<td class=\"time\">" . htmlspecialchars($time) . "</td>";
                 echo "<td class=\"group\">" . htmlspecialchars($duel['group'] ?? 'A') . "</td>";
                 echo "<td class=\"team-1\">" . htmlspecialchars($duel['roster1_name']) . "</td>";
@@ -98,6 +107,20 @@ $conn = ConnectToDB();
 </main>
 
 <script>
+    // EventListener na detail zapasu
+    document.addEventListener('DOMContentLoaded', () => {
+        const rows = document.querySelectorAll('.clickable-row');
+        rows.forEach(row => {
+            row.addEventListener('click', () => {
+                const duelId = row.getAttribute('data-id');
+                if (duelId) {
+                    window.location.href = `/duel/${duelId}`;
+                }
+            });
+        });
+    });
+
+
     // Funkcia na načítanie všetkých turnajov
     function loadTournaments() {
         fetch('/api/tournament')

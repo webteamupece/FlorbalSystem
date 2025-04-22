@@ -442,8 +442,27 @@ if ($segments[0] === 'api') {
    }else{
        include  'index.php';
    }
+    exit;
+
+}else if ($segments[0] == 'logout') {
 
 
+    session_start();
+    session_unset();
+    session_destroy();
+
+    header("Location: /");
+    exit;
+
+} else if ($segments[0] == 'duel') {
+
+    validatePassword();
+
+    if  ($_SESSION['role'] == 'admin'){
+        include  'marekovIndex_copy.php';
+    }else{
+        include  'index.php';
+    }
     exit;
 }
 

@@ -229,6 +229,17 @@ button{
     }
 }
 
+.clickable-row{
+    cursor: pointer;
+
+}
+
+.clickable-row:hover{
+    background-color: #B4121B;
+    color: white;
+
+}
+
 .centered-text{
     text-align: center;
 }
