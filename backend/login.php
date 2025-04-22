@@ -1,12 +1,28 @@
 <?php
+
+require_once __DIR__ . '/api/db.php';
+$conn = ConnectToDB();
+
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $username = $_POST['username'] ?? '';
 
-    if ($password === 'admin123' && $username === 'admin') {
+    // Use prepared statements to prevent SQL injection
+    $stmt = $conn->prepare("SELECT * FROM user WHERE username = :username AND password = :password");
+
+    $stmt->bindParam(':username', $username);
+    $stmt->bindParam(':password', $password);
+
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($result) {
+        // Valid credentials
         $_SESSION['logged_in'] = true;
+
+        $_SESSION['role'] = $result['role'];
 
         // Redirect to the originally requested page
         $redirectTo = $_SESSION['redirect_after_login'] ?? 'index.php';
@@ -15,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
 ?>
 
 <!DOCTYPE html>

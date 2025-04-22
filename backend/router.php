@@ -434,8 +434,16 @@ if ($segments[0] === 'api') {
             return;
     }
 } else if ($segments[0] == 'admin') {
+
    validatePassword();
-    include  'marekovIndex_copy.php';
+
+   if  ($_SESSION['role'] == 'admin'){
+       include  'marekovIndex_copy.php';
+   }else{
+       include  'index.php';
+   }
+
+
     exit;
 }
 
