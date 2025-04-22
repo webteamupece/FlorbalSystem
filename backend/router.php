@@ -458,11 +458,26 @@ if ($segments[0] === 'api') {
 
     validatePassword();
 
-    if  ($_SESSION['role'] == 'admin'){
-        include  'marekovIndex_copy.php';
+    // ak tam je aj idcko duelu
+    $duelId = $segments[1] ?? null;
+
+    if ($duelId){
+        if  ($_SESSION['role'] == 'admin'){
+            // TODO treba urbobit admin duel view
+            include  'marekovIndex_copy.php';
+
+        } else if  ($_SESSION['role'] == 'volunteer'){
+
+            include  'duel_volunteer.php';
+        }
+        else{
+            include  'index.php';
+        }
     }else{
-        include  'index.php';
+        echo 'gg';
     }
+
+
     exit;
 }
 

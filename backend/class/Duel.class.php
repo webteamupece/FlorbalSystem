@@ -217,7 +217,7 @@ class Duel {
         $stmt->bindParam(':duel_id', $duel_id, PDO::PARAM_INT);
         $stmt->execute();
 
-        $duels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $duels = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($duels) {
             return $this->json($duels);
         } else {
